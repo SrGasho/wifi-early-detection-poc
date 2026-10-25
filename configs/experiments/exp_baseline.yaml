@@ -1,0 +1,29 @@
+# Línea base de umbral. Comparte partición, ventanas y episodios con rf_main.
+
+name: baseline_main
+role: main
+seed: 42
+data_config: configs/data.yaml
+features_config: configs/features.yaml
+split_file: configs/splits/caso_B.json
+
+target: binary
+
+window:
+  W_seconds: "<igual que rf_main>"
+  S_seconds: "<igual que rf_main>"
+  k: 1
+
+alerts:
+  max_gap_seconds: "<igual que rf_main>"
+
+model:
+  type: threshold
+  feature: n_disconn            # o rate_disconn
+
+threshold:
+  criterion: max_f1_validation  # empate: menor umbral
+
+mitigation:
+  tau_high: "<igual que rf_main>"
+  cooldown_seconds: "<igual que rf_main>"

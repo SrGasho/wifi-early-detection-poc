@@ -1,0 +1,53 @@
+# Experimento PRINCIPAL de Random Forest. Es el único, junto con la línea base, que llega a la prueba.
+# Todo valor < > se fija en Gate D y se registra en docs/decisiones.md.
+
+name: rf_main
+role: main
+seed: 42
+data_config: configs/data.yaml
+features_config: configs/features.yaml
+split_file: configs/splits/caso_B.json
+
+target: binary                  # normal frente a ataque de desconexión (R11)
+
+window:
+  W_seconds: "<Gate D: estadísticas de entrenamiento (sección 8.2.1)>"
+  S_seconds: "<Gate D: resolución y costo (sección 8.2.1)>"
+  k: 1                          # fijo (R5)
+
+# Partición (la congela split_data --freeze con ESTE archivo).
+split:
+  case: B                       # A | B | C según la Fase 1
+  purge_seconds: "<Gate D: >= W y >= max_W_seconds>"
+  max_W_seconds: "<mayor W de los experimentos de sensibilidad>"
+  proportions: [0.6, 0.2, 0.2]  # fracción de tramas objetivo por conjunto
+  snap_to_silence: true         # mover cortes a silencios entre ráfagas exploratorias
+
+episodes:
+  T_method: percentile_multiple # fixed | percentile_multiple (solo con entrenamiento)
+  T_percentile: "<Gate D>"
+  T_multiplier: "<Gate D>"
+
+alerts:
+  max_gap_seconds: "<Gate D, >= S>"
+
+model:
+  type: random_forest
+  grid:
+    n_estimators: [100, 300]
+    max_depth: [null, 10, 20]
+    min_samples_leaf: [1, 5]
+  class_weight: balanced
+
+imputation:
+  strategy: constant            # constant | train_median
+  value: -1
+
+threshold:
+  criterion: max_f1_validation
+
+features_profile: allowed
+
+mitigation:                     # no afecta ninguna métrica de detección
+  tau_high: "<Gate D>"
+  cooldown_seconds: "<Gate D>"

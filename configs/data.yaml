@@ -1,0 +1,48 @@
+# Rutas, capturas, mapeo de columnas y etiquetas de AWID3.
+# Los valores entre < > se completan en la Fase 1 con evidencia de inspect_data.
+# Nada del código escribe estos nombres a mano.
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+
+# Identificadores NEUTROS: no deben revelar el tipo de ataque (R11).
+# El tipo sale de la etiqueta de cada trama (labels.target), no del nombre de la captura.
+captures:
+  - id: cap_a
+    pattern: "<carpeta_captura_a>/*.csv"
+  - id: cap_b
+    pattern: "<carpeta_captura_b>/*.csv"
+
+# Nombre interno -> nombre en AWID3 (HIPÓTESIS a confirmar en la Fase 1).
+# Si AWID3 trae wlan.fc.type_subtype en vez de tipo y subtipo, reemplazar fc_type/fc_subtype por
+#   fc_type_subtype: wlan.fc.type_subtype
+columns:
+  ts: frame.time_epoch
+  frame_number: frame.number
+  fc_type: wlan.fc.type
+  fc_subtype: wlan.fc.subtype
+  src: wlan.sa
+  dst: wlan.da
+  bssid: wlan.bssid
+  reason_code: wlan.fixed.reason_code
+  seq: wlan.seq
+  signal_dbm: radiotap.dbm_antsignal
+  protected: wlan.fc.protected
+  mfpc: wlan.rsn.capabilities.mfpc
+  mfpr: wlan.rsn.capabilities.mfpr
+  label: Label
+
+labels:
+  # tipo_de_ataque -> valor exacto de la columna de etiqueta
+  target:
+    deauth: "<etiqueta_deauth>"
+    disas: "<etiqueta_disas>"
+  normal: ["<etiqueta_normal>"]
+
+anonymization:
+  salt_env_var: WIFI_ML_SALT   # la sal no se guarda en el repositorio
+
+read:
+  chunksize: 200000            # ajustar según la RAM (pregunta P1)

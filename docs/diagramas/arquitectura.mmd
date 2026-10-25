@@ -1,0 +1,23 @@
+flowchart TB
+    C[5 a 10 clientes Wi-Fi\nSSID corporativo]
+    AP[Punto de acceso Wi-Fi\nIEEE 802.11ac / 5 GHz\nSSID corporativo + invitados]
+    SW[Switch 802.1Q]
+    R[Router / gateway\nRouter-on-a-stick\nDHCP / DNS / NAT / ACL]
+    I[Internet]
+    S[Sensor inalámbrico\nModo monitor\nPuerto de acceso VLAN 20]
+    A[Servidor de análisis\nML, alertas y registro\nPuerto de acceso VLAN 20]
+
+    C <--> |IEEE 802.11ac / 5 GHz| AP
+    AP --> |captura pasiva del aire\nmismo canal| S
+    AP --> |troncal 802.1Q\nVLAN 10, 20 y 30| SW
+    SW --> |troncal 802.1Q\nVLAN 10, 20 y 30| R
+    SW --> |acceso VLAN 20| S
+    SW --> |acceso VLAN 20| A
+    R --> |enrutamiento inter-VLAN + ACL| I
+
+    classDef wireless fill:#e8f4ff,stroke:#2471a3
+    classDef network fill:#eafaf1,stroke:#239b56
+    classDef analysis fill:#fef6e7,stroke:#b9770e
+    class C,AP wireless
+    class SW,R,I network
+    class S,A analysis

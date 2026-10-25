@@ -1,0 +1,24 @@
+# Entorno
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Datos: no se suben (R1). Se conserva solo la documentación de cómo obtenerlos.
+data/raw/*
+data/interim/*
+data/processed/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+
+# Modelos y resultados: no se suben salvo resúmenes elegidos para el paper.
+models/*
+!models/.gitkeep
+results/*
+!results/.gitkeep
+
+# Sal de anonimización y variables locales
+.env
+*.salt

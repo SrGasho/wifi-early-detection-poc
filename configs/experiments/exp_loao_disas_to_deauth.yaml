@@ -1,0 +1,53 @@
+# Caso C: entrena y valida con disociación, prueba con la captura completa de desautenticación.
+# Usa el perfil 'loao' (sin conteos por subtipo ni sustitutos). Solo se ejecuta si la Fase 1 lo permite.
+
+name: loao_disas_to_deauth
+role: main
+seed: 42
+data_config: configs/data.yaml
+features_config: configs/features.yaml
+split_file: configs/splits/caso_C_disas_to_deauth.json
+
+target: binary
+
+window:
+  W_seconds: "<igual que rf_main>"
+  S_seconds: "<igual que rf_main>"
+  k: 1
+
+split:
+  case: C
+  train_attack: disas
+  test_attack: deauth
+  val_fraction: 0.2
+  purge_seconds: "<igual que rf_main>"
+  max_W_seconds: "<igual que rf_main>"
+
+episodes:
+  T_method: percentile_multiple
+  T_percentile: "<igual que rf_main>"
+  T_multiplier: "<igual que rf_main>"
+
+alerts:
+  max_gap_seconds: "<igual que rf_main>"
+
+model:
+  type: random_forest
+  grid:
+    n_estimators: [100, 300]
+    max_depth: [null, 10, 20]
+    min_samples_leaf: [1, 5]
+  class_weight: balanced
+
+imputation:
+  strategy: constant
+  value: -1
+
+threshold:
+  criterion: max_f1_validation
+
+features_profile: loao
+
+mitigation:
+  tau_high: "<igual que rf_main>"
+  cooldown_seconds: "<igual que rf_main>"

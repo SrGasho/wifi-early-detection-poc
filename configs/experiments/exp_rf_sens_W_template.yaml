@@ -1,0 +1,43 @@
+# PLANTILLA de experimento de sensibilidad de W.
+# Cada valor alternativo de W es un experimento independiente (copiar este archivo por valor):
+#   exp_rf_sens_W<valor>.yaml con name: rf_sens_W<valor>
+# Reglas:
+# - role: sensitivity -> nunca puede ejecutarse con --final ni sobre la prueba.
+# - Misma partición, misma S, mismo T y misma rejilla de hiperparámetros que rf_main.
+# - Sus resultados no pueden cambiar la configuración principal.
+# - La lista de valores se declara antes de Gate D en docs/decisiones.md.
+# - La purga de la partición debe ser >= este W (split.max_W_seconds en rf_main).
+
+name: rf_sens_W_template
+role: sensitivity
+seed: 42
+data_config: configs/data.yaml
+features_config: configs/features.yaml
+split_file: configs/splits/caso_B.json
+
+target: binary
+
+window:
+  W_seconds: "<valor alternativo de W>"
+  S_seconds: "<igual que rf_main>"
+  k: 1
+
+alerts:
+  max_gap_seconds: "<igual que rf_main>"
+
+model:
+  type: random_forest
+  grid:
+    n_estimators: [100, 300]
+    max_depth: [null, 10, 20]
+    min_samples_leaf: [1, 5]
+  class_weight: balanced
+
+imputation:
+  strategy: constant
+  value: -1
+
+threshold:
+  criterion: max_f1_validation
+
+features_profile: allowed

@@ -1,0 +1,31 @@
+# Lista PERMITIDA de características (R2). Lo que no esté aquí no entra al modelo.
+# Las que dependan de campos ausentes en AWID3 se quitan en Gate D y se registran como limitación.
+
+allowed:
+  - n_frames_total
+  - n_mgmt
+  - n_data
+  - ratio_data_mgmt
+  - n_deauth
+  - n_disas
+  - n_disconn
+  - rate_disconn
+  - n_unique_src_disconn
+  - n_unique_dst_disconn
+  - frac_broadcast_dst_disconn
+  - iat_disconn_mean
+  - iat_disconn_std
+  - iat_disconn_min
+  - delta_n_disconn
+  - frac_protected_mgmt
+  - rc_counts            # se expande en rc_<código> para reason_codes, más rc_other
+  - seq_jump_max         # solo si wlan.seq existe
+  - signal_std_disconn   # solo si la señal existe
+
+# Caso C (leave-one-attack-out): se excluyen los sustitutos del subtipo.
+loao_exclude:
+  - n_deauth
+  - n_disas
+  - rc_counts            # o solo los códigos que la Fase 1 identifique como sustitutos
+
+reason_codes: ["<lista fija decidida en Gate D>"]
