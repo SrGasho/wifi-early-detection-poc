@@ -11,9 +11,9 @@ paths:
 # El tipo sale de la etiqueta de cada trama (labels.target), no del nombre de la captura.
 captures:
   - id: cap_a
-    pattern: "<carpeta_captura_a>/*.csv"
+    pattern: "awid3_csv/CSV/1.Deauth/*.csv"
   - id: cap_b
-    pattern: "<carpeta_captura_b>/*.csv"
+    pattern: "awid3_csv/CSV/2.Disas/*.csv"
 
 # Nombre interno -> nombre en AWID3 (HIPÓTESIS a confirmar en la Fase 1).
 # Si AWID3 trae wlan.fc.type_subtype en vez de tipo y subtipo, reemplazar fc_type/fc_subtype por
@@ -31,15 +31,19 @@ columns:
   signal_dbm: radiotap.dbm_antsignal
   protected: wlan.fc.protected
   mfpc: wlan.rsn.capabilities.mfpc
-  mfpr: wlan.rsn.capabilities.mfpr
+  # mfpr (wlan.rsn.capabilities.mfpr) NO existe en AWID3 CSV: confirmado en la Fase 1
+  #   con el inventario de columnas (745 CSV, 254 columnas, solo trae 'mfpc'). Se omite.
   label: Label
 
 labels:
   # tipo_de_ataque -> valor exacto de la columna de etiqueta
+  # Valores confirmados en la Fase 1 leyendo la columna 'Label':
+  #   1.Deauth -> {Normal: 1587527, Deauth: 38942}
+  #   2.Disas  -> {Normal: 1938585, Disas: 75131}
   target:
-    deauth: "<etiqueta_deauth>"
-    disas: "<etiqueta_disas>"
-  normal: ["<etiqueta_normal>"]
+    deauth: "Deauth"
+    disas: "Disas"
+  normal: ["Normal"]
 
 anonymization:
   salt_env_var: WIFI_ML_SALT   # la sal no se guarda en el repositorio

@@ -61,6 +61,8 @@ def inspect_capture(data_cfg: dict, capture_id: str, max_rows: int | None) -> di
     present = {i: e for i, e in wanted.items() if all(e in h for h in headers.values())}
     rows, nulls = 0, Counter()
     labels, subtypes, reason_codes, protected = Counter(), Counter(), Counter(), Counter()
+    disconn_by_label = Counter()  # (subtipo_desconexion, etiqueta) -> conteo; responde P8 y P9
+    DISCONN_SUBTYPES = ["10", "12", "0x0a", "0x0c", "0x000a", "0x000c"]
     ts_min, ts_max, inversions, last_ts = None, None, 0, None
     for _, chunk in data_loader.iter_chunks(data_cfg, capture_id, max_rows=max_rows):
         rows += len(chunk)
@@ -69,8 +71,11 @@ def inspect_capture(data_cfg: dict, capture_id: str, max_rows: int | None) -> di
         sub_col = "fc_subtype" if "fc_subtype" in chunk else "fc_type_subtype"
         if sub_col in chunk:
             subtypes.update(chunk[sub_col].fillna("<nulo>").value_counts().to_dict())
+            disc = chunk[chunk[sub_col].isin(DISCONN_SUBTYPES)]
+            if len(disc):
+                pairs = disc[sub_col].astype(str) + " | " + disc["label"].fillna("<nulo>").astype(str)
+                disconn_by_label.update(pairs.value_counts().to_dict())
             if "reason_code" in chunk:
-                disc = chunk[chunk[sub_col].isin(["10", "12", "0x0a", "0x0c", "0x000a", "0x000c"])]
                 reason_codes.update(disc["reason_code"].fillna("<nulo>").value_counts().to_dict())
         if "protected" in chunk:
             protected.update(chunk["protected"].fillna("<nulo>").value_counts().to_dict())
@@ -93,6 +98,7 @@ def inspect_capture(data_cfg: dict, capture_id: str, max_rows: int | None) -> di
         "label_counts": dict(labels.most_common()),
         "subtype_counts": dict(subtypes.most_common(30)),
         "reason_codes_in_disconnection_frames": dict(reason_codes.most_common()),
+        "disconnection_subtype_by_label": dict(disconn_by_label.most_common()),
         "protected_counts": dict(protected),
         "ts_min": None if ts_min is None else float(ts_min),
         "ts_max": None if ts_max is None else float(ts_max),
@@ -114,6 +120,28 @@ def write_report(inventory: dict, out: Path) -> None:
         lines += [f"| {k} | {v} |" for k, v in cap["label_counts"].items()]
         lines += ["", "| Columna | Fracción nula |", "|---|---|"]
         lines += [f"| {k} | {v:.4f} |" for k, v in cap["null_fraction"].items() if v is not None]
+        subtypes = cap.get("subtype_counts") or {}
+        if subtypes:
+            total_sub = sum(subtypes.values())
+            lines += ["", "| Subtipo (wlan.fc.subtype) | Tramas | Fracción |", "|---|---|---|"]
+            lines += [f"| {k} | {v} | {(v / total_sub if total_sub else 0):.4f} |"
+                      for k, v in subtypes.items()]
+        protected = cap.get("protected_counts") or {}
+        if protected:
+            total_prot = sum(protected.values())
+            active = sum(v for k, v in protected.items()
+                         if str(k) not in ("0", "0x0", "<nulo>", "nan", "None"))
+            frac_active = active / total_prot if total_prot else 0.0
+            lines += ["", f"Protección activa (protected != 0/nulo): {active} de {total_prot} "
+                      f"({frac_active:.4f})",
+                      "", "| protected | Tramas |", "|---|---|"]
+            lines += [f"| {k} | {v} |" for k, v in protected.items()]
+        # Cruce subtipo de desconexión x etiqueta (preguntas 8 y 9): revela si hay tramas
+        # deauth/disas (subtipos 10/12) etiquetadas como Normal (desconexiones legítimas).
+        disc_label = cap.get("disconnection_subtype_by_label") or {}
+        if disc_label:
+            lines += ["", "| Subtipo desconexión \\| Etiqueta | Tramas |", "|---|---|"]
+            lines += [f"| {k} | {v} |" for k, v in disc_label.items()]
         lines += ["", f"Códigos de motivo en desconexiones: {cap['reason_codes_in_disconnection_frames']}", ""]
     lines += ["## Preguntas de exploración", "",
               "Responder cada pregunta en `docs/datos-awid3.md` citando este informe o el notebook.", ""]
