@@ -23,11 +23,16 @@ allowed:
   - signal_std_disconn   # solo si la señal existe
 
 # Caso C (leave-one-attack-out): se excluyen los sustitutos del subtipo (Gate D 2.7).
+# frac_broadcast y n_unique_* añadidos tras la verificación V2 (difieren claramente por clase:
+# frac_broadcast 0.18 vs 0.00; n_unique_src 2.6 vs 0.01). Ver docs/reporte-gate-d.md 2.7 / 3.
 loao_exclude:
   - n_deauth
   - n_disas
   - rc_7                  # código 7 casi exclusivo del ataque (datos-awid3.md P14)
   - rc_1
+  - frac_broadcast_dst_disconn
+  - n_unique_src_disconn
+  - n_unique_dst_disconn
 
 # Códigos de motivo con columna propia (Gate D 2.6). 7 y 1 dominan en el ataque; el resto -> rc_other.
 reason_codes: [7, 1]

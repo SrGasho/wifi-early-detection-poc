@@ -112,9 +112,9 @@ por clase; excluir si difieren de forma clara entre deauth y disas.
 |---|---|
 | Partición Caso C con ambas clases en train/val/test | hecho: 503/66/600 ventanas, todas con ambas clases |
 | Latencia medible en test (Caso C) | hecho: `n_start_complete=1` en test |
-| ≥ 99 % de ventanas de ataque de train con trama de desconexión (W=5) | pendiente |
-| `frac_broadcast` y `n_unique_*` por clase (loao_exclude) | pendiente |
-| Distribución de `iat_*` por clase tras truncar | pendiente |
+| V1: ≥ 99 % de ventanas de ataque de train con trama de desconexión (W=5) | **hecho: 100 %** (130 ventanas). W=5 confirmado. |
+| V2: `frac_broadcast` y `n_unique_*` por clase (loao_exclude) | **hecho**: difieren claramente (frac_broadcast 0.18 vs 0.00; n_unique_src 2.6 vs 0.01). Se añaden a `loao_exclude`. |
+| V3: distribución de `iat_*` por clase tras truncar | **hecho**: `iat_mean`/`iat_std` distinguen; `iat_min` queda 0 en ambas clases (no aporta, documentado). |
 
 ## 4. Riesgos residuales
 
