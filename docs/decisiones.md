@@ -1,34 +1,48 @@
 # Registro de decisiones (Gate D)
 
-Cada decisión indica su valor, la evidencia que la sustenta y el commit en que se congeló. Después de la etiqueta `gate-d` nada de esta tabla cambia sin crear un experimento nuevo.
+Cada decisión indica su valor, la evidencia que la sustenta, su estado y el commit en que se congeló. Después de la etiqueta `gate-d` nada de esta tabla cambia sin crear un experimento nuevo.
 
-| Decisión | Valor | Evidencia | Commit |
-|---|---|---|---|
-| Objetivo del modelo | binario: normal frente a ataque de desconexión; análisis por tipo como reporte adicional | plan, sección 14.1 | |
-| Caso de partición | **aceptado (2026-11-10): Caso B**. La latencia se reporta como descriptiva sobre entrenamiento y validación, porque con una ráfaga única no es medible en prueba. No se usa para elegir configuración (R6). | `docs/datos-awid3.md` P1, P2, P11; `analisis_linea.txt` | |
-| Proporciones y ubicación de cortes | pendiente | `episodes_exploratory.json` | |
-| `S` principal | pendiente | resolución deseada y costo (plan, 8.2.1) | |
-| `W` principal | pendiente | estadísticas de entrenamiento (plan, 8.2.1) | |
-| `W` de sensibilidad | pendiente (lista; un experimento por valor) | declarada antes de entrenar | |
-| `purge_seconds` | pendiente (≥ mayor `W`) | | |
-| Método y parámetros de `T` | pendiente (`fixed` o `percentile_multiple`) | intervalos de entrenamiento | |
-| `max_gap_seconds` | pendiente (≥ `S`) | | |
-| Códigos de motivo con columna propia | propuesto: **7 y 1** (rc_7, rc_1, rc_other); código 7 casi exclusivo del ataque | `analisis_cruce.txt`; P14 | |
-| Exclusiones del Caso C | propuesto: `n_deauth`, `n_disas`, `rc_7`, `rc_1` (sustitutos del subtipo) | `analisis_cruce.txt`; P14 | |
-| Características retiradas por falta de campos | propuesto: ninguna por campo ausente; `mfpr` no existe (no estaba en features) | P7, P10, P13 | |
-| Tratamiento de `ts` (fuga por timestamp) | **aceptado (2026-11-10)**: truncar `ts` a segundo entero en `feature_engineering`, solo para `iat_disconn_*`. Pendiente de implementar en Gate D con dos condiciones: (1) confirmar que ninguna otra feature usa la parte fraccionaria de `ts` (las ventanas `[t_end−W, t_end)` dependen de `ts`, hay que comprobar que el efecto de la fracción en el conteo es despreciable); (2) tras truncar, revisar la distribución de `iat_disconn_*` por clase; si queda casi todo en 0, la feature no aporta. | `analisis_timestamp.txt`; P3 | |
-| Corrección `reason_code` a Int32 | **aplicado**: Int16 desbordaba (65535 > 32767, p. ej. 32769 → −32767); ahora Int32, 0 negativos | `src/preprocessing.py`; verificación directa | |
-| Tratamiento de tramas con etiqueta ajena (`other`) | **cerrado: no aplica** (0 tramas `other`; `attack_type` solo normal + deauth/disas) | `preprocessing_summary.json` | |
-| Imputación | constante −1, ajustada con entrenamiento | plan, 8.3 | |
-| Criterio de umbral | máximo F1 en validación; empate: menor umbral | plan, 8.5 y 8.6 | |
-| `tau_high`, `cooldown_seconds` | pendiente | no afectan métricas | |
+Estados:
+- **aceptado (fecha)**: decidido por el autor. Puede tener una condición de verificación pendiente, que se indica en la fila.
+- **pendiente**: sin decidir.
+- **resuelto**: hecho verificable, sin decisión de diseño.
+
+Razonamiento completo de las decisiones de este registro: `docs/reporte-gate-d.md`.
+
+| Decisión | Valor | Evidencia | Estado | Commit |
+|---|---|---|---|---|
+| Objetivo del modelo | binario: normal frente a ataque de desconexión (Deauth y Disas de AWID3); análisis por tipo como reporte adicional | plan, 14.1; artículo III-A | aceptado (2026-11-10) | |
+| Alcance del ataque | desautenticación (Deauth) y disociación (Disas) del conjunto AWID3, sin separar difusión y dirigido. La proporción de difusión se reporta como análisis complementario. | `datos-awid3.md` P9; `analisis_cruce.txt` | aceptado (2026-11-10). Cambio pendiente en artículo y anteproyecto | |
+| Caso de partición principal | **Caso C** (leave-one-attack-out), en ambos sentidos. Reemplaza a Caso B tras la verificación con datos (ver fila siguiente). El artículo (III-D) lo contempla como "evaluación alternativa o principal". Da clasificación y latencia medible (el ataque de prueba llega completo). | `split_data` 2026-11-10; artículo III-D | aceptado (2026-11-10) | |
+| Caso B (descartado como partición principal) | **No viable como partición de 3 vías** con la geometría de AWID3: el ataque está en un bloque al final de cada captura y todo el tráfico normal antes, así que los cortes 60/20/20 por cuantil de tramas objetivo dejan val y test 100 % ataque, sin ventanas normales, y `split_data` aborta (regla de presencia de ambas clases). Se documenta como hallazgo; no se usa. Los configs de Caso B (`exp_rf.yaml`, `exp_baseline.yaml`, `exp_rf_sens_W_template.yaml`) se eliminaron del repositorio; el rastro queda en esta fila. | `split_data` preview 2026-11-10 (val=20, test=51 ventanas, todas de ataque) | aceptado (2026-11-10) | |
+| Proporciones y ubicación de cortes | Caso C: entrena+valida con una captura (val = tramo final, `val_fraction=0.2`), prueba con la otra captura completa | `reporte-gate-d.md` 2.4 | aceptado (2026-11-10). Verificar tamaños reales con `split_data` | |
+| `S` principal | 1.0 s | resolución del dato (1 s) | aceptado (2026-11-10) | |
+| `W` principal | 5.0 s | `reporte-gate-d.md` 2.3 | aceptado (2026-11-10). **Condición**: al menos una trama de desconexión en ≥ 99 % de las ventanas de ataque de entrenamiento | |
+| `W` de sensibilidad | 3.0 s y 10.0 s; experimentos independientes, solo en validación | artículo III-C, V | aceptado (2026-11-10) | |
+| `purge_seconds` | 10.0 s (≥ mayor `W`, R7) | plan, 8.4 | aceptado (2026-11-10) | |
+| Método y parámetros de `T` | `fixed`, `T_seconds = 2.0`. La brecha máxima entre tramas objetivo en todo el dataset es 1.0 s, así que cualquier subconjunto la cumple; no depende de datos de prueba. | `analisis_linea.txt`; `reporte-gate-d.md` 2.5 | aceptado (2026-11-10). Cambiado en `exp_rf.yaml` y experimentos de Caso C de `percentile_multiple` a `fixed` | |
+| `max_gap_seconds` | 1.0 s (= `S`) | plan, 8.7 | aceptado (2026-11-10) | |
+| Códigos de motivo con columna propia | **7 y 1** (`rc_7`, `rc_1`, `rc_other`). Código 7 casi exclusivo del ataque. | `analisis_cruce.txt`; `datos-awid3.md` P14 | aceptado (2026-11-10). Experimento de sensibilidad sin `rc_*` usa el perfil `no_rc` | |
+| Códigos fuera del catálogo 802.11 (p. ej. 58499) | se mantienen en `rc_other`; no se anulan en esta tanda | `datos-awid3.md`; `analisis_cruce.txt` | aceptado (2026-11-10) | |
+| Exclusiones del Caso C (`loao_exclude`) | `n_deauth`, `n_disas`, `rc_7`, `rc_1`, `frac_broadcast_dst_disconn`, `n_unique_src_disconn`, `n_unique_dst_disconn` | artículo III-C; `datos-awid3.md` P14; verificación V2 | aceptado (2026-11-10). V2 **solo con capturas de entrenamiento** (R6) confirmó que difieren por clase en ambos sentidos; añadidos. | |
+| Fuga por imputación de `iat_*` | `iat_disconn_mean/std/min` **retiradas de `allowed`**: en ventanas normales hay <2 desconexiones → nulo → imputado a −1, que señala la clase. Distinta de la fuga por formato de `ts`. | V3; `reporte-gate-d.md` 2.2 | aceptado (2026-11-10) | |
+| Tratamiento de `ts` (fuga por timestamp) | truncar `ts` a segundo entero en `iat_disconn_*` antes de `np.diff`. **Sin efecto sobre features usadas**: las `iat_disconn_*` se retiraron de `allowed` (fila siguiente), así que el truncado es código conservado pero no aplicado a ninguna feature del modelo. | `analisis_timestamp.txt`; `reporte-gate-d.md` 2.2 | aceptado (2026-11-10); código sin efecto tras retirar iat_* | |
+| Características retiradas por falta de campos | ninguna por campo ausente. `mfpr` no existe en AWID3 CSV; `mfpc` tiene ~99.6 % de nulos y no entra a features | `datos-awid3.md` P7, P10, P13 | resuelto | |
+| Integridad de R6 (prueba una sola vez) | **Desviación documentada**: hubo dos ejecuciones `--final`. La primera (exp_id …2055/…2124) corrió antes de fijar `loao_exclude` y se **descartó** (borrada). El conjunto de características (ampliar `loao_exclude`, retirar `iat_*`) se decidió **después** de esa primera ejecución, así que no fue un test ciego perfecto. Mitigación: todo el pipeline se regeneró desde el commit limpio y las exclusiones se re-justificaron solo con entrenamiento. Se declara como limitación, no como "una sola vez". | `reporte-gate-d.md` 5; marcadores `final/` | aceptado como desviación (2026-11-10) | |
+| Corrección `reason_code` a `Int32` | Int16 desbordaba (valores hasta 65535); ahora Int32 | `src/preprocessing.py` | resuelto (PR #1) | |
+| Tratamiento de tramas `other` | no aplica: 0 tramas `other` | `preprocessing_summary.json` | resuelto | |
+| `tau_high`, `cooldown_seconds` | 0.9 y 30 s. Supuestos de simulación; no afectan métricas ni se optimizan. | plan, 8.9 | aceptado (2026-11-10) | |
+| Imputación | constante −1, ajustada con entrenamiento | plan, 8.3 | aceptado (plan) | |
+| Criterio de umbral | máximo F1 en validación; empate: menor umbral | plan, 8.5 y 8.6 | aceptado (plan) | |
 
 ## Limitaciones declaradas
 
 - La partición es consciente de etiquetas (organiza capturas, verifica clases, ubica cortes). Las etiquetas no entran al modelo, pero esto limita la interpretación de la generalización.
-- AWID3 (802.1X/EAP, PMF activo) difiere del escenario de la pequeña empresa.
+- **Caso B no es una partición de 3 vías viable con esta geometría** (ataque en bloque al final de cada captura). Se usa Caso C como principal.
+- Caso C mide transferencia entre ataques relacionados (deauth ↔ disas), no generalización frente a ataques de otra naturaleza.
+- El código de motivo 7 casi solo aparece en ataques. Los resultados con `rc_*` pueden sobreestimar la detección; el experimento de sensibilidad sin `rc_*` (perfil `no_rc`) lo mide.
+- AWID3 (802.1X/EAP, PMF activo según su documentación) difiere del escenario de la pequeña empresa.
 - Banda y canal fijos: **5 GHz, canal 36** (`radiotap.channel.freq=5180`) en ambas capturas; sin diversidad de canal.
 - Sin validación en hardware físico; la mitigación es simulada.
 - La latencia está acotada por `S`.
-- El Caso C mide transferencia entre ataques relacionados, no generalización a ataques de otra naturaleza.
 - Compatibilidad PMF desconocida cuando `mfpc` es nulo o no existe.

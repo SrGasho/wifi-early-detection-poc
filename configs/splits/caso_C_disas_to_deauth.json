@@ -1,0 +1,64 @@
+{
+  "case": "C",
+  "created_at": "2026-11-11T03:01:20+00:00",
+  "git_commit": "81a1f415bbf29ffd4d6d68e0b7f7c5b0548ed799",
+  "W_seconds": 5.0,
+  "S_seconds": 1.0,
+  "purge_seconds": 10.0,
+  "max_W_seconds": 10.0,
+  "cut_placement": "cap_b: val = [1608310059.8..1608310170.0] (normal+ataque); train = [inicio..1608310049.8] + [1608310180.0..fin], purga 10.0s; cap_a: prueba = captura completa, incluido su inicio",
+  "label_aware": true,
+  "label_aware_note": "La partición usa la posición de las etiquetas de referencia solo para organizar capturas, verificar clases y ubicar cortes. No usa resultados de modelos.",
+  "units": {
+    "train": [
+      {
+        "capture_id": "cap_b",
+        "t_from": null,
+        "t_to": 1608310049.8
+      },
+      {
+        "capture_id": "cap_b",
+        "t_from": 1608310180.0,
+        "t_to": null
+      }
+    ],
+    "val": [
+      {
+        "capture_id": "cap_b",
+        "t_from": 1608310059.8,
+        "t_to": 1608310170.0
+      }
+    ],
+    "test": [
+      {
+        "capture_id": "cap_a",
+        "t_from": null,
+        "t_to": null
+      }
+    ]
+  },
+  "class_presence": {
+    "train": {
+      "n_windows": 465,
+      "normal": true,
+      "attack": true,
+      "deauth": false,
+      "disas": true
+    },
+    "val": {
+      "n_windows": 105,
+      "normal": true,
+      "attack": true,
+      "deauth": false,
+      "disas": true
+    },
+    "test": {
+      "n_windows": 599,
+      "normal": true,
+      "attack": true,
+      "deauth": true,
+      "disas": false
+    }
+  },
+  "latency_measurable_in_test": "se determina con los episodios definitivos (episodes_*_meta.json)"
+}

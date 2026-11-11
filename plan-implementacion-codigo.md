@@ -83,11 +83,13 @@ wifi-early-detection-poc/
 │   ├── features.yaml             # lista permitida y exclusiones del Caso C
 │   ├── splits/                   # particiones congeladas (Fase 2, se versionan)
 │   └── experiments/
-│       ├── exp_baseline.yaml               # línea base principal
-│       ├── exp_rf.yaml                     # Random Forest principal (define la partición)
-│       ├── exp_rf_sens_W_template.yaml     # plantilla: un archivo por cada W de sensibilidad
-│       ├── exp_loao_deauth_to_disas.yaml   # Caso C, un sentido
-│       └── exp_loao_disas_to_deauth.yaml   # Caso C, sentido inverso
+│       ├── exp_loao_deauth_to_disas.yaml      # Caso C (principal), un sentido
+│       ├── exp_loao_disas_to_deauth.yaml      # Caso C (principal), sentido inverso
+│       ├── exp_baseline_deauth_to_disas.yaml  # línea base Caso C, un sentido
+│       ├── exp_baseline_disas_to_deauth.yaml  # línea base Caso C, sentido inverso
+│       ├── exp_rf_sens_W3.yaml                # sensibilidad W=3 (solo validación)
+│       ├── exp_rf_sens_W10.yaml               # sensibilidad W=10 (solo validación)
+│       └── exp_loao_deauth_to_disas_no_rc.yaml # sensibilidad sin rc_* (solo validación)
 │
 ├── docs/
 │   ├── arquitectura.md
@@ -237,37 +239,40 @@ loao_exclude:
 reason_codes: ["<lista fija decidida en Gate D>"]
 ```
 
-### 4.3 `configs/experiments/exp_rf.yaml` (principal)
+### 4.3 `configs/experiments/exp_loao_deauth_to_disas.yaml` (principal, Caso C)
+
+Ejemplo con los valores ya congelados en Gate D (ver `docs/decisiones.md`). El otro sentido es
+`exp_loao_disas_to_deauth.yaml`.
 
 ```yaml
-name: rf_main
+name: loao_deauth_to_disas
 role: main                      # main | sensitivity
 seed: 42
 data_config: configs/data.yaml
 features_config: configs/features.yaml
-split_file: configs/splits/caso_B.json
+split_file: configs/splits/caso_C_deauth_to_disas.json
 
 target: binary                  # DECIDIDO: normal vs. ataque de desconexión
 
 window:
-  W_seconds: <Gate D, desde estadísticas de entrenamiento (sección 8.2.1)>
-  S_seconds: <Gate D, por resolución y costo (sección 8.2.1)>
+  W_seconds: 5.0                # Gate D
+  S_seconds: 1.0                # Gate D (resolución del dato = 1 s)
   k: 1                          # fijo
 
-split:                          # solo el experimento principal congela la partición
-  case: B                       # A | B | C
-  purge_seconds: <Gate D, >= W y >= max_W_seconds>
-  max_W_seconds: <mayor W de los experimentos de sensibilidad>
-  proportions: [0.6, 0.2, 0.2]
-  snap_to_silence: true
+split:
+  case: C                       # Caso C es la partición principal (Caso B descartado, 8.4)
+  train_attack: deauth
+  test_attack: disas
+  val_fraction: 0.2
+  purge_seconds: 10.0           # >= mayor W de sensibilidad (R7)
+  max_W_seconds: 10.0
 
 episodes:
-  T_method: percentile_multiple # fixed | percentile_multiple
-  T_percentile: <Gate D>
-  T_multiplier: <Gate D>        # T = multiplicador × percentil de intervalos entre tramas objetivo de entrenamiento
+  T_method: fixed               # Gate D (percentile degenera con IAT ~0)
+  T_seconds: 2.0
 
 alerts:
-  max_gap_seconds: <Gate D, mínimo S>
+  max_gap_seconds: 1.0          # Gate D (= S)
 
 model:
   type: random_forest
@@ -284,16 +289,16 @@ imputation:
 threshold:
   criterion: max_f1_validation
 
-features_profile: allowed       # o loao
+features_profile: loao          # Caso C usa 'loao' (excluye sustitutos del subtipo)
 
 mitigation:                     # no afecta ninguna métrica de detección
-  tau_high: <valor>
-  cooldown_seconds: <valor>
+  tau_high: 0.9
+  cooldown_seconds: 30.0
 ```
 
 ### 4.4 Experimentos de sensibilidad
 
-**Cada configuración alternativa de `W` es un experimento independiente**, con su propio archivo (`exp_rf_sens_W<valor>.yaml`, a partir de la plantilla), su propio `exp_id`, sus propias ventanas, su propio modelo, su propio `metadata.json` y sus propias métricas de validación. Comparte con el principal la partición, `S`, `T`, la rejilla de hiperparámetros, el entrenamiento y la validación.
+**Cada configuración alternativa de `W` es un experimento independiente**, con su propio archivo (`exp_rf_sens_W3.yaml`, `exp_rf_sens_W10.yaml`), su propio `exp_id`, sus propias ventanas, su propio modelo, su propio `metadata.json` y sus propias métricas de validación. Comparte con el principal la partición, `S`, `T`, la rejilla de hiperparámetros, el entrenamiento y la validación. Además hay un experimento de sensibilidad sin códigos de motivo (`exp_loao_deauth_to_disas_no_rc.yaml`, perfil `no_rc`).
 
 - Llevan `role: sensitivity`. El código rechaza `--final` para ellos: nunca se ejecutan sobre la prueba.
 - No reutilizan el modelo entrenado con la configuración principal.
@@ -671,8 +676,10 @@ Todas usan las tramas de `[t_end − W, t_end)`, salvo `delta_*`, que usa ademá
 **Casos:**
 
 - **Caso A (varias capturas independientes):** capturas completas a cada conjunto, por asignación explícita o con semilla. No requiere purga dentro de las capturas.
-- **Caso B (una captura por ataque):** dos cortes por captura en los cuantiles de las tramas objetivo (por ejemplo 60/20/20); cada corte se mueve al centro del silencio entre ráfagas exploratorias más cercano en el que quepa la purga. Purga ≥ `max_W_seconds` a cada lado de cada corte. La latencia en prueba es medible solo si hay un episodio definitivo con `start_complete = True` en prueba.
-- **Caso C (leave-one-attack-out):** entrenamiento y validación con las capturas de un tipo (validación = tramo final, con purga) y prueba con la captura completa del otro tipo, incluido su inicio. Perfil `loao`. Un archivo de experimento por sentido.
+- **Caso B (una captura por ataque):** descartado para AWID3. En AWID3 cada captura tiene el tráfico normal al inicio y el ataque en un bloque al final (una sola frontera normal→ataque), así que los cortes 60/20/20 por cuantil de tramas objetivo dejan validación y prueba sin ventanas normales y la partición se rechaza (verificado en Gate D, 2026-11-10; ver `docs/reporte-gate-d.md` 2.1). No se usa como partición principal.
+- **Caso C (leave-one-attack-out) — partición PRINCIPAL del PoC:** entrenamiento y validación con la captura de un tipo, prueba con la captura completa del otro tipo (incluido su inicio, para medir latencia). Perfil `loao`. Un archivo de experimento por sentido.
+  - **Opción D (ubicación de la validación), adoptada para la geometría de AWID3:** la validación es una franja temporal que **cruza la frontera normal→ataque** de la captura de entrenamiento, de modo que contenga ambas clases. Como hay una sola frontera por captura, el entrenamiento se parte en **dos unidades** (tráfico normal temprano + ataque tardío) a los lados de la validación, con purga a cada lado. Agregado, el entrenamiento tiene ambas clases. Esto reemplaza el diseño previo de "validación = tramo final del ataque", que dejaba la validación sin tráfico normal.
+  - **Selección de exclusiones del perfil `loao`:** los sustitutos del subtipo se identifican **solo con la captura de entrenamiento de cada sentido**, nunca con la captura de prueba, para no usar información de prueba en la selección de características (R6).
 
 **Verificaciones antes de congelar:** unidades sin solapamiento; cada conjunto con `y = 0` e `y = 1`; `purge_seconds ≥ max(W, max_W_seconds)`; `class_presence` completo; archivo nuevo, con el commit actual.
 

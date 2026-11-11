@@ -1,0 +1,40 @@
+# Línea base de umbral para Caso C deauth->disas. Comparte partición y ventanas con loao_deauth_to_disas.
+name: baseline_deauth_to_disas
+role: main
+seed: 42
+data_config: configs/data.yaml
+features_config: configs/features.yaml
+split_file: configs/splits/caso_C_deauth_to_disas.json
+
+target: binary
+
+window:
+  W_seconds: 5.0
+  S_seconds: 1.0
+  k: 1
+
+split:
+  case: C
+  train_attack: deauth
+  test_attack: disas
+  val_fraction: 0.2
+  purge_seconds: 10.0
+  max_W_seconds: 10.0
+
+episodes:
+  T_method: fixed
+  T_seconds: 2.0
+
+alerts:
+  max_gap_seconds: 1.0
+
+model:
+  type: threshold
+  feature: n_disconn
+
+threshold:
+  criterion: max_f1_validation
+
+mitigation:
+  tau_high: 0.9
+  cooldown_seconds: 30.0

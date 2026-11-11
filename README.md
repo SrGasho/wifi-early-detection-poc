@@ -55,30 +55,33 @@ python -m src.inspect_data --data configs/data.yaml --max-rows 200000
 python -m src.preprocessing --data configs/data.yaml
 python -m src.episodes --mode exploratory --data configs/data.yaml --T-provisional <s>
 
-# Fase 2: Gate D (completar los < > de configs/experiments/ y docs/decisiones.md)
-python -m src.split_data --exp configs/experiments/exp_rf.yaml            # vista previa
-python -m src.split_data --exp configs/experiments/exp_rf.yaml --freeze
-python -m src.episodes --mode definitive --exp configs/experiments/exp_rf.yaml
-python -m src.feature_engineering --exp configs/experiments/exp_rf.yaml
+# Fase 2: Gate D (ya congelado). Partición principal: Caso C (leave-one-attack-out), ambos sentidos.
+python -m src.split_data --exp configs/experiments/exp_loao_deauth_to_disas.yaml            # vista previa
+python -m src.split_data --exp configs/experiments/exp_loao_deauth_to_disas.yaml --freeze
+python -m src.episodes --mode definitive --exp configs/experiments/exp_loao_deauth_to_disas.yaml
+python -m src.feature_engineering --exp configs/experiments/exp_loao_deauth_to_disas.yaml
 
 # Fases 3 y 4: solo validación
-python -m src.baseline --exp configs/experiments/exp_baseline.yaml
-python -m src.train --exp configs/experiments/exp_rf.yaml --importance
-python -m src.predict --exp configs/experiments/exp_rf.yaml --split val
-python -m src.alerts --exp configs/experiments/exp_rf.yaml --split val
-python -m src.evaluate --exp configs/experiments/exp_rf.yaml --split val --figures
+python -m src.baseline --exp configs/experiments/exp_baseline_deauth_to_disas.yaml
+python -m src.train --exp configs/experiments/exp_loao_deauth_to_disas.yaml --importance
+python -m src.predict --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split val
+python -m src.alerts --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split val
+python -m src.evaluate --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split val --figures
 
 # Fase 5: prueba, una sola vez y con el árbol git limpio
-python -m src.predict --exp configs/experiments/exp_rf.yaml --split test --final
-python -m src.alerts --exp configs/experiments/exp_rf.yaml --split test --final
-python -m src.evaluate --exp configs/experiments/exp_rf.yaml --split test --final --figures
+python -m src.predict --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split test --final
+python -m src.alerts --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split test --final
+python -m src.evaluate --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split test --final --figures
 
 # Fase 6
-python -m src.replay --exp configs/experiments/exp_rf.yaml --split test --final
-python -m src.mitigation_simulator --exp configs/experiments/exp_rf.yaml --split test --final
+python -m src.replay --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split test --final
+python -m src.mitigation_simulator --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split test --final
 ```
 
-Los mismos pasos de las fases 3 a 6 se ejecutan con `exp_baseline.yaml`. Los experimentos de sensibilidad (`role: sensitivity`) solo llegan hasta la validación.
+Repetir las fases 2 a 6 con el sentido inverso (`exp_loao_disas_to_deauth.yaml`) y su línea base
+(`exp_baseline_disas_to_deauth.yaml`). Los experimentos de sensibilidad (`role: sensitivity`:
+`exp_rf_sens_W3.yaml`, `exp_rf_sens_W10.yaml`, `exp_loao_deauth_to_disas_no_rc.yaml`) solo llegan hasta
+la validación. El Caso B se descartó (geometría de AWID3); ver `docs/reporte-gate-d.md` 2.1.
 
 ## Diseño de red
 

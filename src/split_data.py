@@ -115,7 +115,28 @@ def case_b(split_cfg: dict, targets: dict, exploratory: pd.DataFrame | None, pur
     return units, "; ".join(notes)
 
 
-def case_c(split_cfg: dict, targets: dict, exploratory: pd.DataFrame | None, purge: float) -> tuple[dict, str]:
+def case_c(split_cfg: dict, targets: dict, extents: dict, exploratory: pd.DataFrame | None,
+           purge: float) -> tuple[dict, str]:
+    """Caso C (leave-one-attack-out), Opción D.
+
+    Geometría de AWID3: en cada captura el tráfico normal está al inicio y el ataque es un bloque
+    al final, con una sola frontera normal->ataque. Por eso ninguna partición temporal simple logra
+    que train y val tengan a la vez ambas clases con un solo corte.
+
+    Solución (Opción D, ver docs/reporte-gate-d.md 2.1):
+    - val: franja [inicio_ataque - m, inicio_ataque + m] de la captura de entrenamiento. Cruza la
+      frontera, así que contiene tráfico normal (antes) y de ataque (después). m = val_fraction *
+      duración del ataque.
+    - train: el RESTO de la captura de entrenamiento, en DOS unidades con purga alrededor de val:
+      [inicio, val_lo - purge] (normal temprano) y [val_hi + purge, fin] (ataque tardío). Agregadas,
+      train tiene ambas clases.
+    - test: la otra captura completa, incluido su inicio (latencia medible).
+
+    Alternativas consideradas y descartadas (docs/reporte-gate-d.md 2.1):
+    - Val = tramo final del ataque (diseño original): val 100 % ataque -> falla por falta de normal.
+    - Val = último val_fraction del tiempo de captura: cae dentro del ataque -> igual problema.
+    - Caso B como 3 vías: imposible, una sola frontera por captura.
+    """
     train_attack = C.require({"split": split_cfg}, "split.train_attack")
     test_attack = C.require({"split": split_cfg}, "split.test_attack")
     if train_attack == test_attack:
@@ -130,11 +151,32 @@ def case_c(split_cfg: dict, targets: dict, exploratory: pd.DataFrame | None, pur
     units: dict = {s: [] for s in SPLITS}
     notes = []
     for cid in by_type[train_attack]:
-        ts = targets[cid][0]
-        ep = exploratory[exploratory["capture_id"] == cid] if exploratory is not None else None
-        cut, how = snap_to_silence(quantile_time(ts, 1 - val_fraction), ep, purge)
-        notes.append(f"{cid}: validación = tramo final ({how})")
-        units = _merge(units, _units_from_cuts(cid, [cut], purge, ("train", "val")))
+        ts = np.sort(targets[cid][0])
+        cap_lo, cap_hi = extents[cid]
+        atk_start, atk_end = float(ts[0]), float(ts[-1])
+        # Franja de validación: desde un poco antes del inicio del ataque (para incluir normal)
+        # hasta el cuantil val_fraction de las tramas de ataque (para incluir ataque). Se recorta
+        # a los límites de la captura dejando sitio para la purga a ambos lados del entrenamiento.
+        half = val_fraction * (atk_end - atk_start)
+        v_lo = max(cap_lo + purge, atk_start - half)   # deja normal temprano para train izquierda
+        v_hi = min(cap_hi - purge, float(np.quantile(ts, val_fraction)) + 1.0)
+        if v_hi <= v_lo:
+            v_hi = min(cap_hi - purge, v_lo + max(half, 1.0))
+        train_left_hi = v_lo - purge      # normal temprano (train izquierda)
+        train_right_lo = v_hi + purge     # ataque tardío (train derecha)
+        left_ok = train_left_hi > cap_lo
+        right_ok = train_right_lo < cap_hi
+        if not (left_ok and right_ok):
+            raise SplitError(
+                f"{cid}: la franja de validación no deja entrenamiento con ambas clases "
+                f"(cap=[{cap_lo:.1f},{cap_hi:.1f}], val=[{v_lo:.1f},{v_hi:.1f}], purga={purge}). "
+                "Reduzca val_fraction o la purga."
+            )
+        units["train"].append({"capture_id": cid, "t_from": None, "t_to": train_left_hi})
+        units["train"].append({"capture_id": cid, "t_from": train_right_lo, "t_to": None})
+        units["val"].append({"capture_id": cid, "t_from": v_lo, "t_to": v_hi})
+        notes.append(f"{cid}: val = [{v_lo:.1f}..{v_hi:.1f}] (normal+ataque); "
+                     f"train = [inicio..{train_left_hi:.1f}] + [{train_right_lo:.1f}..fin], purga {purge}s")
     for cid in by_type[test_attack]:
         units["test"].append({"capture_id": cid, "t_from": None, "t_to": None})
         notes.append(f"{cid}: prueba = captura completa, incluido su inicio")
@@ -195,7 +237,7 @@ def make_split(cfg: dict) -> dict:
     elif case == "B":
         units, placement = case_b(split_cfg, targets, exploratory, purge)
     elif case == "C":
-        units, placement = case_c(split_cfg, targets, exploratory, purge)
+        units, placement = case_c(split_cfg, targets, extents, exploratory, purge)
     else:
         raise C.ConfigError("split.case debe ser A, B o C.")
 

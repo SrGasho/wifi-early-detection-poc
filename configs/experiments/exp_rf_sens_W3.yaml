@@ -1,0 +1,36 @@
+# Experimento de sensibilidad de W = 3 s (Gate D). Solo validación; nunca prueba.
+# Misma partición, S, T e hiperparámetros que rf_main. No puede cambiar la configuración principal.
+
+name: rf_sens_W3
+role: sensitivity
+seed: 42
+data_config: configs/data.yaml
+features_config: configs/features.yaml
+split_file: configs/splits/caso_C_deauth_to_disas.json
+
+target: binary
+
+window:
+  W_seconds: 3.0                # valor alternativo de W
+  S_seconds: 1.0                # = rf_main
+  k: 1
+
+alerts:
+  max_gap_seconds: 1.0          # = rf_main
+
+model:
+  type: random_forest
+  grid:
+    n_estimators: [100, 300]
+    max_depth: [null, 10, 20]
+    min_samples_leaf: [1, 5]
+  class_weight: balanced
+
+imputation:
+  strategy: constant
+  value: -1
+
+threshold:
+  criterion: max_f1_validation
+
+features_profile: allowed

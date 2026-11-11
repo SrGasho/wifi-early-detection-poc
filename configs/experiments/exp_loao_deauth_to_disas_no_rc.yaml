@@ -1,0 +1,47 @@
+# Sensibilidad: RF Caso C deauth->disas SIN códigos de motivo (perfil no_rc). Mide el atajo de rc_7.
+# role: sensitivity -> nunca --final ni prueba. Misma partición y ventanas que loao_deauth_to_disas.
+name: loao_deauth_to_disas_no_rc
+role: sensitivity
+seed: 42
+data_config: configs/data.yaml
+features_config: configs/features.yaml
+split_file: configs/splits/caso_C_deauth_to_disas.json
+
+target: binary
+
+window:
+  W_seconds: 5.0
+  S_seconds: 1.0
+  k: 1
+
+split:
+  case: C
+  train_attack: deauth
+  test_attack: disas
+  val_fraction: 0.2
+  purge_seconds: 10.0
+  max_W_seconds: 10.0
+
+episodes:
+  T_method: fixed
+  T_seconds: 2.0
+
+alerts:
+  max_gap_seconds: 1.0
+
+model:
+  type: random_forest
+  grid:
+    n_estimators: [100, 300]
+    max_depth: [null, 10, 20]
+    min_samples_leaf: [1, 5]
+  class_weight: balanced
+
+imputation:
+  strategy: constant
+  value: -1
+
+threshold:
+  criterion: max_f1_validation
+
+features_profile: no_rc

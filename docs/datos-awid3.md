@@ -28,19 +28,19 @@ evidencia quede en el repositorio aunque la salida original no se suba.
 | # | Pregunta | Respuesta | Evidencia | Decisión afectada |
 |---|---|---|---|---|
 | 1 | ¿Cuántas capturas independientes existen por ataque? | Deauth: 33 archivos CSV (`cap_a`); Disas: 41 archivos CSV (`cap_b`). Cada ataque está en su carpeta. | `discover.json`; `report.md` (cap_a/cap_b: n.º de archivos) | caso A, B o C |
-| 2 | ¿Los eventos aparecen en tramos contiguos? | Sí, **demostrado con la línea de tiempo**. El ataque dura ~180 s (no toda la captura) y ocupa el 100 % de los bloques de 10 s (cap_a 18/18, cap_b 19/19), con 0 bloques vacíos. Mediana ~2200–2460 tramas objetivo por bloque. | `analisis_linea.txt`; `episodes_exploratory.json` | ubicación de cortes |
-| 3 | ¿Existen marcas temporales utilizables? | Sí, pero con **FUGA confirmada**. `ts` 0 % nulo. **Las tramas de ataque tienen `ts` entero en el 100 %**; las Normal del mismo subtipo 12 solo 0.49–0.59. La parte fraccionaria separa la clase → `iat_disconn_*` (derivadas de `ts`) pueden filtrar la etiqueta por un artefacto de formato. Mitigación en Gate D: truncar `ts` a segundo entero antes de las features, o retirar `iat_disconn_std/min/mean`. | `analisis_timestamp.txt`; `report.md` | ventanas y latencia; features retiradas |
+| 2 | ¿Los eventos aparecen en tramos contiguos? | Sí, **demostrado con la línea de tiempo**. El ataque dura ~180 s (no toda la captura) y ocupa el 100 % de los bloques de 10 s (cap_a 18/18, cap_b 19/19), con 0 bloques vacíos. Mediana de tramas objetivo por bloque: cap_a ~2190; cap_b ~2458 (mediana), pero el promedio de cap_b es ~3950 (75 131 tramas en 19 bloques), por la mayor densidad de Disas. | `analisis_linea.txt`; `episodes_exploratory.json` | ubicación de cortes |
+| 3 | ¿Existen marcas temporales utilizables? | Sí. `ts` 0 % nulo. **Las tramas de ataque (gestión, type=0) tienen `ts` entero en el 100 %.** Las desautenticaciones de gestión Normal son muy pocas (cap_a 72 = 69 disas + 3 deauth; cap_b 51 = 45 disas + 6 deauth), así que no hay una comparación de "mismo subtipo gestión" significativa. **El `ts` entero NO es exclusivo del ataque**: tramas Normal de gestión de otros subtipos (2 y 3) también tienen `ts` entero casi siempre (~0.98–1.00), así que la fracción no separa por sí sola. Las tramas Normal con subtipo 12 pero type=1 (control, ~300k) sí tienen fracción ~0.49–0.59, pero no son desautenticaciones. Riesgo residual: `iat_disconn_*` se derivan de `ts` entero → se retiraron de `allowed` (Gate D). | `analisis_timestamp.txt` (desglosado por type) | ventanas y latencia; features retiradas |
 | 4 | ¿Los clientes se reasocian después del evento? | Indicio, no concluyente (1 captura, referencia no independiente). En cap_b las solicitudes de (re)asociación caen de 358 (40 clientes) antes a 18 (4 clientes) tras el episodio; en cap_a el ataque ocupa toda la captura y no hay "después" limpio. | `analisis_reasociacion.txt` | referencia de impacto |
 | 5 | ¿Existe un efecto observable que pueda utilizarse como referencia? | Parcial: la caída de reasociaciones tras el ataque (P4) es el único efecto medible, pero con 1 captura no es tráfico de referencia independiente. Evitar el término "anticipación". | `analisis_reasociacion.txt` | uso del término "anticipación" |
 | 6 | ¿Qué proporción de tramas tiene protección activada? | `cap_a`: 542 003 / 1 626 469 = **33.3 %** con `protected=1`. `cap_b`: 720 177 / 2 013 716 = **35.8 %**. | `report.md` (tabla "Protección activa") | `frac_protected_mgmt` |
 | 7 | ¿Están disponibles `wlan.seq`, potencia de señal y códigos de motivo? | Sí. `seq` presente (~63–66 % nulo, poblado en gestión); `signal_dbm` (`radiotap.dbm_antsignal`) **0 % nulo**; `reason_code` presente en tramas de desconexión (dominan 7 y 1). | `report.md` (fracción nula; reason codes) | `seq_jump_max`, `signal_std_disconn`, `rc_*` |
-| 8 | ¿Existen eventos legítimos de desautenticación o disociación? | **Matizado.** Las ~303k/320k desconexiones "Normal" (subtipos 12 y 10 sumados; 302 887 + 180 en cap_a) tienen, en ~99 %, **`src` nulo y `reason_code` nulo**, no protegidas, no broadcast (cap_a: 300 957 de 303 067 con src nulo; solo 88 fuentes distintas). Su causa no está verificada (podrían ser tramas sin cuerpo en la disección). Desconexión legítima con `src` real = unos pocos miles. | `analisis_cruce.txt` | dificultad real del problema |
-| 9 | ¿Las etiquetas separan difusión, ataques dirigidos y disociación? | Parcial. La etiqueta es por tipo (`Normal`/`Deauth`/`Disas`), no distingue difusión vs dirigido; se infiere de `is_broadcast_dst` + subtipo. En el ataque, la mayoría NO es broadcast (dirigido); solo una fracción es broadcast (cap_a: 5 714 de 32 772 con rc=7). | `analisis_cruce.txt` (columna Broadcast) | alcance de ataques dirigidos |
+| 8 | ¿Existen eventos legítimos de desautenticación o disociación? | **Corregido (Gate D).** Un conteo inicial por `fc_subtype` solo daba ~320k "desconexiones Normal" en cap_b, pero al filtrar por `fc_type` resulta que **las desconexiones de gestión (fc_type=0) etiquetadas Normal son: cap_a 72 (69 disas + 3 deauth); cap_b 51 (45 disas + 6 deauth)**. El resto de las ~320k son `fc_type=1` (control) o `fc_type=2` (data), que comparten el número de subtipo pero NO son deauth/disas. Las desautenticaciones de ataque son fc_type=0 el 100 %. Conclusión: desconexión de gestión legítima real = **decenas** por captura, no cientos de miles. | `frames_cap_*.parquet` (fc_type=0 × fc_subtype × label) | dificultad real del problema |
+| 9 | ¿Las etiquetas separan difusión, ataques dirigidos y disociación? | Parcial. La etiqueta es por tipo (`Normal`/`Deauth`/`Disas`), no distingue difusión vs dirigido; se infiere de `is_broadcast_dst`. En el ataque de gestión (type=0), la mayoría NO es broadcast (dirigido): cap_a, de las deauth con rc=7, 27 009 unicast vs 5 714 broadcast. El cruce tipo×subtipo×etiqueta (filtrado por type=0) separa deauth (12) de disas (10). | `analisis_cruce.txt` (tipo×subtipo, columna Broadcast) | alcance de ataques dirigidos |
 | 10 | ¿Qué campos son comunes a todas las capturas? | Todos. Las **745 CSV comparten exactamente las mismas 254 columnas**. Columnas mapeadas ausentes: ninguna en cap_a ni cap_b. | `discover.json`; `report.md` ("Columnas mapeadas ausentes: ninguna") | lista `allowed` |
-| 11 | ¿Cada ataque es una ráfaga continua o varias separadas por silencios? | **Una ráfaga continua, demostrado.** 100 % de bloques de 10 s ocupados, 0 vacíos, ~2200–2460 tramas/bloque (mediana). Dura ~180 s. 1 episodio por captura. | `analisis_linea.txt`; `episodes_exploratory.json` | episodios, `T`, caso de partición |
+| 11 | ¿Cada ataque es una ráfaga continua o varias separadas por silencios? | **Una ráfaga continua, demostrado.** 100 % de bloques de 10 s ocupados, 0 vacíos, ~2190/2458 por captura, tramas/bloque (mediana). Dura ~180 s. 1 episodio por captura. | `analisis_linea.txt`; `episodes_exploratory.json` | episodios, `T`, caso de partición |
 | 12 | ¿Cuál es la banda y el canal de las capturas? | **5 GHz, canal 36** (`radiotap.channel.freq=5180`) en ambas capturas. Valor fijo; no se mapea en `data.yaml`, se registra como limitación de dominio. | lectura puntual de `radiotap.channel.freq`/`wlan_radio.channel` | limitación de dominio |
 | 13 | ¿Están disponibles `mfpc` y `mfpr` en asociación o reasociación? | `mfpc` (`wlan.rsn.capabilities.mfpc`) **existe** pero ~99.6 % nulo (solo en tramas RSN de asociación). **`mfpr` NO existe** en AWID3 CSV. | `discover.json`; `report.md` (mfpc nulo); mapeo | mitigación simulada |
-| 14 | ¿Qué características podrían actuar como sustitutos del subtipo? | **`reason_code` confirmado como sustituto** (cruce por etiqueta): código **7** casi exclusivo del ataque (cap_a: 32 772 ataque vs 3 Normal; cap_b: ~63 847 vs 1) y código **1** secundario; Normal es `reason_code` nulo. Deben ir en `loao_exclude`. También `n_deauth`/`n_disas` y la tasa de desconexión. | `analisis_cruce.txt` | `loao_exclude` |
+| 14 | ¿Qué características podrían actuar como sustitutos del subtipo? | **`reason_code` confirmado como sustituto** (cruce filtrado a gestión, type=0): código **7** casi exclusivo del ataque (cap_a deauth type=0: ~32 700 con rc=7 entre unicast y broadcast; en Normal de gestión es marginal) y código **1** secundario. Las desautenticaciones de gestión Normal son muy pocas, así que rc=7 separa casi perfectamente. Van en `loao_exclude` junto con `n_deauth`/`n_disas`, `frac_broadcast` y `n_unique_*` (verificación V2, solo con entrenamiento). | `analisis_cruce.txt` (type=0) | `loao_exclude` |
 
 ## Mapeo real de columnas
 
@@ -91,60 +91,56 @@ Esto también limita la latencia de alerta a 1 s (R3/R4).
 Tablas extraídas de `results/inspection/analisis_*.txt` (no versionados). Regenerar con los
 comandos de la sección "Cómo reproducir la evidencia".
 
-### P3 — fracción de `ts` entero por etiqueta y subtipo (`analisis_timestamp.txt`)
+### P3 — fracción de `ts` entero por etiqueta, **tipo** y subtipo (`analisis_timestamp.txt`)
 
-Fragmento con los subtipos relevantes (ataque = 1.0000; Normal de desconexión 0.49–0.59):
+Desglosado por `fc_type` (0=gestión, 1=control, 2=datos). El ataque es gestión (type=0) con ts entero
+al 100 %. Las desautenticaciones de gestión Normal son muy pocas (3 en cap_a, 6 en cap_b). Las tramas
+Normal con subtipo 12 pero type=1 (~300k) NO son desautenticaciones:
 
 ```
 ## cap_a
-| Etiqueta | Subtipo | Tramas | Ts enteros | Fracción |
-| Deauth   | 10      | 49     | 49         | 1.0000   |
-| Deauth   | 12      | 38893  | 38893      | 1.0000   |
-| Normal   | 2       | 57     | 56         | 0.9825   |
-| Normal   | 3       | 50     | 50         | 1.0000   |
-| Normal   | 12      | 302887 | 177669     | 0.5866   |
-| Normal   | 13      | 56987  | 46576      | 0.8173   |
+| Etiqueta | Tipo | Subtipo | Tramas | Ts enteros | Fracción |
+| Deauth   | 0    | 10      | 49     | 49         | 1.0000   |
+| Deauth   | 0    | 12      | 38893  | 38893      | 1.0000   |
+| Normal   | 0    | 12      | 3      | 3          | 1.0000   |  (gestión Normal: solo 3)
+| Normal   | 1    | 12      | 300954 | 176690     | 0.5871   |  (control, NO desconexión)
+| Normal   | 2    | 12      | 1930   | 976        | 0.5057   |  (datos, NO desconexión)
 
 ## cap_b
-| Etiqueta | Subtipo | Tramas | Ts enteros | Fracción |
-| Disas    | 10      | 68994  | 68994      | 1.0000   |
-| Disas    | 12      | 6137   | 6137       | 1.0000   |
-| Normal   | 2       | 125    | 123        | 0.9840   |
-| Normal   | 3       | 128    | 128        | 1.0000   |
-| Normal   | 12      | 319917 | 156934     | 0.4905   |
-| Normal   | 13      | 252140 | 240750     | 0.9548   |
+| Etiqueta | Tipo | Subtipo | Tramas | Ts enteros | Fracción |
+| Disas    | 0    | 10      | 68994  | 68994      | 1.0000   |
+| Disas    | 0    | 12      | 6137   | 6137       | 1.0000   |
+| Normal   | 0    | 10      | 45     | 44         | 0.9778   |  (gestión Normal: solo 45)
+| Normal   | 1    | 12      | 315981 | 154277     | 0.4882   |  (control, NO desconexión)
 ```
 
-### P8 — origen de las desconexiones etiquetadas Normal (`analisis_cruce.txt`)
+### P8 — desconexiones de GESTIÓN etiquetadas Normal (`analisis_cruce.txt`, filtrado type=0)
 
 ```
-## cap_a — desconexiones Normal (subtipos 10 y 12)
-- Fuentes distintas (hash): 88
-- Tramas: 303067   (= 302887 subtipo 12 + 180 subtipo 10)
-- src nulo: 300957 de 303067
-- reason_code: <nulo> en la gran mayoría
-- Fila principal del cruce: Normal | 12 | <nulo> | protegida=False | broadcast=False | 302819
+## cap_a — tipo × subtipo (etiqueta Normal):
+  Normal | type=0 | subtipo 10: 69     (gestión real)
+  Normal | type=0 | subtipo 12: 3      (gestión real)
+  => desconexiones de gestión Normal en cap_a: 72 (no ~303 000)
+  Normal | type=1 | subtipo 12: 300954 (CONTROL, no es desautenticación)
+  Normal | type=2 | subtipo 10/12: 2041 (DATOS, no es desautenticación)
 
-## cap_b — desconexiones Normal
-- Fuentes distintas (hash): 102
-- Tramas: 320053
-- src nulo: 315984 de 320053
+## cap_b — tipo × subtipo (etiqueta Normal):
+  Normal | type=0 | subtipo 10: 45
+  Normal | type=0 | subtipo 12: 6
+  => desconexiones de gestión Normal en cap_b: 51
+  (el resto, ~320k, es control/datos)
 ```
 
 ### P11 — línea de tiempo de tramas objetivo (`analisis_linea.txt`)
 
 ```
 ## cap_a
-- Tramas objetivo: 38942
-- Duración entre la primera y la última: 179.0 s
-- Bloques de 10 s con tramas objetivo: 18 de 18 (1.0000)
-- Racha máxima de bloques vacíos: 0
-- Tramas por bloque ocupado: mínimo 1311, mediana 2190, máximo 2828
+- Tramas objetivo: 38942 ; duración 179.0 s
+- Bloques de 10 s con tramas objetivo: 18 de 18 ; racha máxima vacía: 0
+- Tramas por bloque ocupado: mín 1311, mediana 2190, máx 2828
 
 ## cap_b
-- Tramas objetivo: 75131
-- Duración entre la primera y la última: 181.0 s
-- Bloques de 10 s con tramas objetivo: 19 de 19 (1.0000)
-- Racha máxima de bloques vacíos: 0
-- Tramas por bloque ocupado: mínimo 305, mediana 2458, máximo 21399
+- Tramas objetivo: 75131 ; duración 181.0 s
+- Bloques de 10 s con tramas objetivo: 19 de 19 ; racha máxima vacía: 0
+- Tramas por bloque ocupado: mín 305, mediana 2458, máx 21399 (promedio ~3950)
 ```

@@ -169,7 +169,11 @@ def compute_window_features(win: dict[str, np.ndarray], prev_n_disconn: float, *
         f["frac_broadcast_dst_disconn"] = float(win["is_broadcast_dst"][disconn].mean())
         ts_d = win["ts"][disconn]
         if n_disconn >= 2:
-            iat = np.diff(ts_d)
+            # Fuga por formato (Gate D 2.2): en AWID3 las tramas de ataque traen ts entero y
+            # las normales fraccionario, así que iat_* podría separar la clase por el formato,
+            # no por el ataque. Se trunca ts a segundo entero SOLO aquí (para iat_*); la rejilla
+            # de ventanas usa el ts original. Ver docs/decisiones.md y docs/reporte-gate-d.md 2.2.
+            iat = np.diff(np.floor(ts_d))
             f["iat_disconn_mean"] = float(iat.mean())
             f["iat_disconn_std"] = float(iat.std())
             f["iat_disconn_min"] = float(iat.min())
@@ -223,9 +227,16 @@ def expand_names(names: list[str], reason_codes: list[int]) -> list[str]:
 
 
 def resolve_feature_columns(features_cfg: dict, profile: str) -> list[str]:
-    """Lista ordenada de columnas de ``X`` según el perfil (``allowed`` o ``loao``)."""
-    if profile not in ("allowed", "loao"):
-        raise C.ConfigError("features_profile debe ser 'allowed' o 'loao'.")
+    """Lista ordenada de columnas de ``X`` según el perfil.
+
+    Perfiles:
+    - ``allowed``: todas las columnas de ``allowed`` (rc_counts expandido).
+    - ``loao``: ``allowed`` menos ``loao_exclude`` (Caso C, sin sustitutos del subtipo).
+    - ``no_rc``: ``allowed`` menos todas las columnas ``rc_*`` (sensibilidad: mide el aporte
+      del código de motivo; ver docs/decisiones.md y reporte-gate-d.md 2.6).
+    """
+    if profile not in ("allowed", "loao", "no_rc"):
+        raise C.ConfigError("features_profile debe ser 'allowed', 'loao' o 'no_rc'.")
     allowed = list(features_cfg.get("allowed") or [])
     if not allowed:
         raise C.ConfigError("features.yaml: la lista 'allowed' está vacía.")
@@ -236,6 +247,8 @@ def resolve_feature_columns(features_cfg: dict, profile: str) -> list[str]:
     if profile == "loao":
         exclude = set(expand_names(list(features_cfg.get("loao_exclude") or []), codes))
         cols = [c for c in cols if c not in exclude]
+    elif profile == "no_rc":
+        cols = [c for c in cols if not c.startswith("rc_")]
     known = set(BASE_FEATURES) | {f"rc_{c}" for c in codes} | {"rc_other"}
     unknown = [c for c in cols if c not in known]
     if unknown:
