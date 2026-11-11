@@ -144,8 +144,9 @@ hizo tras ver la primera ejecución, se declara como desviación de R6 (ver `dec
 
 ## 6. Provenance de la ejecución final
 
-`run_evaluate_test.json` de ambos sentidos registra el **commit que se etiquetará `gate-d`** (verificado:
-`git_commit` del run == HEAD), `git_dirty = False`, con fecha **posterior** a la regeneración de splits
+`run_evaluate_test.json` de ambos sentidos registra `git_commit = 6a49bb4` (leído del archivo del run; es el
+commit donde se ejecutó la prueba, **no** el HEAD actual, que avanzó con correcciones de documentación
+posteriores), `git_dirty = False`, con fecha **posterior** a la regeneración de splits
 (`4191123`, 2026-11-10 22:01 −05:00). Los splits `caso_C_*.json` se congelaron en `81a1f41` (commit donde se
 definió la lógica Opción D); entre `81a1f41` y el commit del tag **no cambió nada en `src/` ni en `configs/`
 del experimento** (solo `scripts/`, `tests/`, `docs/` y el `created_at` de los splits), así que la base de

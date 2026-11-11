@@ -45,12 +45,13 @@ acumula desconexiones y el ataque (ráfaga de gestión densa) queda perfectament
 tras recongelar los splits desde el commit limpio. Las cifras **no cambiaron** (el resultado no dependía de
 `iat_*`: `n_disconn` ya separa), lo que confirma que las features con fuga no sostenían el F1.
 
-**Por qué RF y línea base dan cifras idénticas.** Con esa separación, cualquier modelo acierta. La
-importancia por permutación del RF en validación es **0 para todas las features** (quitar cualquiera no
-cambia la métrica, porque varias separan por sí solas). La línea base usa directamente `n_disconn`. Ambos
-convergen a la misma frontera trivial. No es un error de pipeline: es que el problema es linealmente
-separable por una sola característica. Features del RF (perfil `loao`, **sin `iat_disconn_*`** —retiradas,
-ver abajo— y sin sustitutos del subtipo):
+**RF y línea base casi empatan.** Con esa separación, cualquier modelo acierta. La línea base usa
+directamente `n_disconn`, y el RF llega a la misma frontera. La diferencia es de una ventana en
+deauth→disas (F1 1.0000 frente a 0.9973); en disas→deauth las cifras coinciden. La importancia por
+permutación del RF en validación es **0 para todas las features** (quitar cualquiera no cambia la métrica,
+porque varias separan por sí solas). El problema es linealmente separable por una sola característica.
+
+Features del RF (perfil `loao`, **sin `iat_disconn_*`** —retiradas, ver abajo— y sin sustitutos del subtipo):
 `n_frames_total, n_mgmt, n_data, ratio_data_mgmt, n_disconn, rate_disconn, delta_n_disconn,
 frac_protected_mgmt, rc_other, seq_jump_max, signal_std_disconn`.
 
