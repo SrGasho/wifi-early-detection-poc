@@ -11,25 +11,24 @@ split_file: configs/splits/caso_B.json
 target: binary                  # normal frente a ataque de desconexión (R11)
 
 window:
-  W_seconds: "<Gate D: estadísticas de entrenamiento (sección 8.2.1)>"
-  S_seconds: "<Gate D: resolución y costo (sección 8.2.1)>"
+  W_seconds: 5.0                # Gate D 2.3
+  S_seconds: 1.0                # Gate D 2.3 (resolución del dato = 1 s)
   k: 1                          # fijo (R5)
 
 # Partición (la congela split_data --freeze con ESTE archivo).
 split:
-  case: B                       # A | B | C según la Fase 1
-  purge_seconds: "<Gate D: >= W y >= max_W_seconds>"
-  max_W_seconds: "<mayor W de los experimentos de sensibilidad>"
+  case: B                       # Gate D: Caso B (1 captura por ataque)
+  purge_seconds: 10.0           # Gate D 2.4 (>= mayor W de sensibilidad, R7)
+  max_W_seconds: 10.0           # mayor W de los experimentos de sensibilidad
   proportions: [0.6, 0.2, 0.2]  # fracción de tramas objetivo por conjunto
   snap_to_silence: true         # mover cortes a silencios entre ráfagas exploratorias
 
 episodes:
-  T_method: percentile_multiple # fixed | percentile_multiple (solo con entrenamiento)
-  T_percentile: "<Gate D>"
-  T_multiplier: "<Gate D>"
+  T_method: fixed               # Gate D 2.5 (percentile degenera con IAT ~0)
+  T_seconds: 2.0
 
 alerts:
-  max_gap_seconds: "<Gate D, >= S>"
+  max_gap_seconds: 1.0          # Gate D 2.5 (= S)
 
 model:
   type: random_forest
@@ -49,5 +48,5 @@ threshold:
 features_profile: allowed
 
 mitigation:                     # no afecta ninguna métrica de detección
-  tau_high: "<Gate D>"
-  cooldown_seconds: "<Gate D>"
+  tau_high: 0.9                 # Gate D 2.8 (supuesto de simulación)
+  cooldown_seconds: 30.0

@@ -11,8 +11,8 @@ split_file: configs/splits/caso_C_disas_to_deauth.json
 target: binary
 
 window:
-  W_seconds: "<igual que rf_main>"
-  S_seconds: "<igual que rf_main>"
+  W_seconds: 5.0                # = rf_main (Gate D)
+  S_seconds: 1.0
   k: 1
 
 split:
@@ -20,16 +20,15 @@ split:
   train_attack: disas
   test_attack: deauth
   val_fraction: 0.2
-  purge_seconds: "<igual que rf_main>"
-  max_W_seconds: "<igual que rf_main>"
+  purge_seconds: 10.0           # = rf_main
+  max_W_seconds: 10.0
 
 episodes:
-  T_method: percentile_multiple
-  T_percentile: "<igual que rf_main>"
-  T_multiplier: "<igual que rf_main>"
+  T_method: fixed               # Gate D 2.5
+  T_seconds: 2.0
 
 alerts:
-  max_gap_seconds: "<igual que rf_main>"
+  max_gap_seconds: 1.0          # = rf_main
 
 model:
   type: random_forest
@@ -49,5 +48,5 @@ threshold:
 features_profile: loao
 
 mitigation:
-  tau_high: "<igual que rf_main>"
-  cooldown_seconds: "<igual que rf_main>"
+  tau_high: 0.9                 # = rf_main
+  cooldown_seconds: 30.0

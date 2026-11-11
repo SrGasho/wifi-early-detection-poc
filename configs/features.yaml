@@ -22,10 +22,12 @@ allowed:
   - seq_jump_max         # solo si wlan.seq existe
   - signal_std_disconn   # solo si la señal existe
 
-# Caso C (leave-one-attack-out): se excluyen los sustitutos del subtipo.
+# Caso C (leave-one-attack-out): se excluyen los sustitutos del subtipo (Gate D 2.7).
 loao_exclude:
   - n_deauth
   - n_disas
-  - rc_counts            # o solo los códigos que la Fase 1 identifique como sustitutos
+  - rc_7                  # código 7 casi exclusivo del ataque (datos-awid3.md P14)
+  - rc_1
 
-reason_codes: ["<lista fija decidida en Gate D>"]
+# Códigos de motivo con columna propia (Gate D 2.6). 7 y 1 dominan en el ataque; el resto -> rc_other.
+reason_codes: [7, 1]

@@ -10,12 +10,12 @@ split_file: configs/splits/caso_B.json
 target: binary
 
 window:
-  W_seconds: "<igual que rf_main>"
-  S_seconds: "<igual que rf_main>"
+  W_seconds: 5.0                # = rf_main (Gate D)
+  S_seconds: 1.0
   k: 1
 
 alerts:
-  max_gap_seconds: "<igual que rf_main>"
+  max_gap_seconds: 1.0          # = rf_main
 
 model:
   type: threshold
@@ -25,5 +25,5 @@ threshold:
   criterion: max_f1_validation  # empate: menor umbral
 
 mitigation:
-  tau_high: "<igual que rf_main>"
-  cooldown_seconds: "<igual que rf_main>"
+  tau_high: 0.9                 # = rf_main
+  cooldown_seconds: 30.0

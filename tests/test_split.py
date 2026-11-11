@@ -79,12 +79,52 @@ def test_set_without_attack_is_rejected(project):
         split_data.make_split(cfg)
 
 
-def test_case_c_accepts_single_type_in_test(project):
-    cfg = C.load_experiment(project["rf"])
-    cfg["split"] = {"case": "C", "purge_seconds": PURGE, "train_attack": "deauth", "test_attack": "disas",
-                    "val_fraction": 0.2}
+def test_case_c_accepts_single_type_in_test(tmp_path, monkeypatch):
+    """Caso C con geometría tipo AWID3: normal al inicio, un bloque de ataque al final.
+
+    Verifica la Opción D: train y test tienen ambas clases; val es la franja que cruza el inicio
+    del ataque de la captura de entrenamiento; test es la otra captura completa.
+    """
+    import yaml
+    from tests.conftest import make_capture, experiment_dict, _write_yaml
+
+    root = tmp_path
+    # Ataque en un solo bloque al final (como AWID3): ráfaga [450, 560] sobre 600 s.
+    bursts_final = [(450, 560)]
+    fa = make_capture("cap_a", "deauth", 12, 7, bursts=bursts_final, seed=1)
+    fb = make_capture("cap_b", "disas", 10, 8, bursts=bursts_final, seed=2)
+    interim = root / "data/interim"
+    interim.mkdir(parents=True, exist_ok=True)
+    (root / "data/processed").mkdir(parents=True, exist_ok=True)
+    fa.to_parquet(interim / "frames_cap_a.parquet", index=False)
+    fb.to_parquet(interim / "frames_cap_b.parquet", index=False)
+    data = {
+        "paths": {k: str(root / "data" / k) for k in ("raw", "interim", "processed")},
+        "captures": [{"id": "cap_a", "pattern": "a/*.csv"}, {"id": "cap_b", "pattern": "b/*.csv"}],
+        "columns": {"ts": "frame.time_epoch", "label": "Label", "fc_type": "wlan.fc.type",
+                    "fc_subtype": "wlan.fc.subtype"},
+        "labels": {"target": {"deauth": "deauth", "disas": "disas"}, "normal": ["Normal"]},
+        "anonymization": {"salt_env_var": "WIFI_ML_SALT_TEST"},
+    }
+    _write_yaml(root / "configs/data.yaml", data)
+    feats = yaml.safe_load((C.ROOT / "configs/features.yaml").read_text(encoding="utf-8"))
+    feats["reason_codes"] = [7, 1]
+    _write_yaml(root / "configs/features.yaml", feats)
+    exp = experiment_dict(root, "loao_test")
+    exp["split"] = {"case": "C", "purge_seconds": PURGE, "train_attack": "deauth",
+                    "test_attack": "disas", "val_fraction": 0.2, "max_W_seconds": W}
+    rf = _write_yaml(root / "configs/experiments/exp_loao.yaml", exp)
+
+    cfg = C.load_experiment(rf)
     split = split_data.make_split(cfg)
-    test = split["class_presence"]["test"]
-    assert test["disas"] and not test["deauth"]
+    presence = split["class_presence"]
+    # train y test con ambas clases; val con ambas (cruza la frontera normal->ataque).
+    assert presence["train"]["normal"] and presence["train"]["attack"]
+    assert presence["test"]["normal"] and presence["test"]["attack"]
+    assert presence["val"]["normal"] and presence["val"]["attack"]
+    # test = cap_b completa; solo disas.
     assert split["units"]["test"] == [{"capture_id": "cap_b", "t_from": None, "t_to": None}]
+    assert presence["test"]["disas"] and not presence["test"]["deauth"]
+    # train tiene dos unidades (a ambos lados de la validación) en cap_a.
+    assert len(split["units"]["train"]) == 2
     assert split["label_aware"] is True

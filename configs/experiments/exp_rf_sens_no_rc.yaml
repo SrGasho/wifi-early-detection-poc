@@ -1,0 +1,36 @@
+# Experimento de sensibilidad SIN códigos de motivo (Gate D 2.6). Mide cuánto aporta rc_*.
+# Solo validación; nunca prueba. Misma partición, W, S, T e hiperparámetros que rf_main.
+
+name: rf_sens_no_rc
+role: sensitivity
+seed: 42
+data_config: configs/data.yaml
+features_config: configs/features.yaml
+split_file: configs/splits/caso_B.json
+
+target: binary
+
+window:
+  W_seconds: 5.0                # = rf_main
+  S_seconds: 1.0
+  k: 1
+
+alerts:
+  max_gap_seconds: 1.0          # = rf_main
+
+model:
+  type: random_forest
+  grid:
+    n_estimators: [100, 300]
+    max_depth: [null, 10, 20]
+    min_samples_leaf: [1, 5]
+  class_weight: balanced
+
+imputation:
+  strategy: constant
+  value: -1
+
+threshold:
+  criterion: max_f1_validation
+
+features_profile: no_rc         # excluye todas las rc_* (Gate D 2.6)
