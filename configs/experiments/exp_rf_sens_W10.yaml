@@ -6,7 +6,7 @@ role: sensitivity
 seed: 42
 data_config: configs/data.yaml
 features_config: configs/features.yaml
-split_file: configs/splits/caso_B.json
+split_file: configs/splits/caso_C_deauth_to_disas.json
 
 target: binary
 
