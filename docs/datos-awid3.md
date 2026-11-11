@@ -2,6 +2,29 @@
 
 Cada respuesta cita su evidencia: `results/inspection/report.md`, `inventory.json`, `discover.json`, `episodes_exploratory.json` o una figura del notebook. Mientras una respuesta esté pendiente, la decisión que dependa de ella no puede congelarse en Gate D.
 
+## Cómo reproducir la evidencia
+
+Las salidas `results/inspection/*` no se versionan (`.gitignore`). Para regenerarlas desde `data/raw`
+(requiere el dataset AWID3 descomprimido y, para `preprocessing`, la variable `WIFI_ML_SALT`):
+
+```
+# Inventario e informe (inspect_data)
+python -m src.inspect_data --data configs/data.yaml --out results/inspection
+
+# Preprocesado y episodios exploratorios
+python -m src.preprocessing --data configs/data.yaml
+python -m src.episodes --mode exploratory --data configs/data.yaml --T-provisional 2.0
+
+# Análisis de apoyo (cada modo escribe results/inspection/analisis_<modo>.txt)
+python -m scripts.analisis_fase1 --data configs/data.yaml --modo timestamp
+python -m scripts.analisis_fase1 --data configs/data.yaml --modo cruce
+python -m scripts.analisis_fase1 --data configs/data.yaml --modo linea
+python -m scripts.analisis_fase1 --data configs/data.yaml --modo reasociacion
+```
+
+Las tablas que sostienen P3, P8 y P11 están copiadas al final de este documento para que la
+evidencia quede en el repositorio aunque la salida original no se suba.
+
 | # | Pregunta | Respuesta | Evidencia | Decisión afectada |
 |---|---|---|---|---|
 | 1 | ¿Cuántas capturas independientes existen por ataque? | Deauth: 33 archivos CSV (`cap_a`); Disas: 41 archivos CSV (`cap_b`). Cada ataque está en su carpeta. | `discover.json`; `report.md` (cap_a/cap_b: n.º de archivos) | caso A, B o C |
@@ -62,3 +85,66 @@ Decisión para Gate D (preferida: la primera, por eliminar la diferencia para to
 - Retirar `iat_disconn_std`, `iat_disconn_min` e `iat_disconn_mean` de `allowed`.
 
 Esto también limita la latencia de alerta a 1 s (R3/R4).
+
+## Evidencia copiada (para reproducibilidad en el repositorio)
+
+Tablas extraídas de `results/inspection/analisis_*.txt` (no versionados). Regenerar con los
+comandos de la sección "Cómo reproducir la evidencia".
+
+### P3 — fracción de `ts` entero por etiqueta y subtipo (`analisis_timestamp.txt`)
+
+Fragmento con los subtipos relevantes (ataque = 1.0000; Normal de desconexión 0.49–0.59):
+
+```
+## cap_a
+| Etiqueta | Subtipo | Tramas | Ts enteros | Fracción |
+| Deauth   | 10      | 49     | 49         | 1.0000   |
+| Deauth   | 12      | 38893  | 38893      | 1.0000   |
+| Normal   | 2       | 57     | 56         | 0.9825   |
+| Normal   | 3       | 50     | 50         | 1.0000   |
+| Normal   | 12      | 302887 | 177669     | 0.5866   |
+| Normal   | 13      | 56987  | 46576      | 0.8173   |
+
+## cap_b
+| Etiqueta | Subtipo | Tramas | Ts enteros | Fracción |
+| Disas    | 10      | 68994  | 68994      | 1.0000   |
+| Disas    | 12      | 6137   | 6137       | 1.0000   |
+| Normal   | 2       | 125    | 123        | 0.9840   |
+| Normal   | 3       | 128    | 128        | 1.0000   |
+| Normal   | 12      | 319917 | 156934     | 0.4905   |
+| Normal   | 13      | 252140 | 240750     | 0.9548   |
+```
+
+### P8 — origen de las desconexiones etiquetadas Normal (`analisis_cruce.txt`)
+
+```
+## cap_a — desconexiones Normal (subtipos 10 y 12)
+- Fuentes distintas (hash): 88
+- Tramas: 303067   (= 302887 subtipo 12 + 180 subtipo 10)
+- src nulo: 300957 de 303067
+- reason_code: <nulo> en la gran mayoría
+- Fila principal del cruce: Normal | 12 | <nulo> | protegida=False | broadcast=False | 302819
+
+## cap_b — desconexiones Normal
+- Fuentes distintas (hash): 102
+- Tramas: 320053
+- src nulo: 315984 de 320053
+```
+
+### P11 — línea de tiempo de tramas objetivo (`analisis_linea.txt`)
+
+```
+## cap_a
+- Tramas objetivo: 38942
+- Duración entre la primera y la última: 179.0 s
+- Bloques de 10 s con tramas objetivo: 18 de 18 (1.0000)
+- Racha máxima de bloques vacíos: 0
+- Tramas por bloque ocupado: mínimo 1311, mediana 2190, máximo 2828
+
+## cap_b
+- Tramas objetivo: 75131
+- Duración entre la primera y la última: 181.0 s
+- Bloques de 10 s con tramas objetivo: 19 de 19 (1.0000)
+- Racha máxima de bloques vacíos: 0
+- Tramas por bloque ocupado: mínimo 305, mediana 2458, máximo 21399
+```
