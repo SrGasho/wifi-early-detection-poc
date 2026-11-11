@@ -33,8 +33,8 @@ Las clases **no se solapan**: la ventana normal con más desconexiones de gesti�
 menos tiene 82. La razón de fondo (corregida en Gate D, ver `datos-awid3.md` P8): en cap_b casi no hay
 desautenticaciones de **gestión** normales — las ~320 000 tramas con subtipo 10/12 y etiqueta Normal son en
 su mayoría de `fc_type` control/data, que **no** cuentan como desconexión (`n_disconn` exige `fc_type=0`).
-Solo 51 desautenticaciones de gestión normales en toda la captura. Por eso ninguna ventana normal acumula
-desconexiones y el ataque (ráfaga de gestión densa) queda perfectamente separado.
+Solo 51 desautenticaciones de gestión normales en toda cap_b (72 en cap_a). Por eso ninguna ventana normal
+acumula desconexiones y el ataque (ráfaga de gestión densa) queda perfectamente separado.
 
 **Nota:** la tabla del §1 se regeneró tras retirar `iat_disconn_*` de `allowed` (fuga por imputación, V3) y
 tras recongelar los splits desde el commit limpio. Las cifras **no cambiaron** (el resultado no dependía de

@@ -123,12 +123,30 @@ por clase; excluir si difieren de forma clara entre deauth y disas.
 - Una sola captura por tipo de ataque: la validación es corta y el umbral puede ser inestable.
 - AWID3 no representa la red de la empresa de referencia.
 
-## 5. Nota de proceso: ejecución de prueba descartada
+## 5. Nota de proceso: ejecución de prueba descartada (registro)
 
-Durante el desarrollo de Gate D hubo una primera ejecución `--final` (exp_id `…2055`/`…2124`) **antes** de
-ampliar `loao_exclude` (commit `f3bcfb7`). Esos resultados se descartaron y los experimentos se regeneraron
-(exp_id `…2129`) con el conjunto de características definitivo. Para que la integridad de R6 sea completa
-—que ningún `--final` preceda a la selección de características— el pipeline se **regenera por entero desde
-el commit limpio etiquetado `gate-d`**: splits, ventanas, modelos y prueba. Las exclusiones de `loao`
-(`frac_broadcast`, `n_unique_*`) se justifican **solo con las capturas de entrenamiento** (sección 2.7 / V2),
-sin mirar la captura de prueba.
+Durante el desarrollo de Gate D hubo una **primera ejecución `--final`** (exp_id `…2055` deauth→disas,
+`…2124` disas→deauth) **antes** de ampliar `loao_exclude` (commit `f3bcfb7`) y de retirar `iat_*`. Esos
+resultados se descartaron y se regeneraron con el conjunto de características definitivo.
+
+**Registro de la primera ejecución (para poder verificar la desviación):**
+
+| Ejecución | F1 ventana | Latencia | Nota |
+|---|---|---|---|
+| Primera `--final` (descartada), deauth→disas RF | 0.9973 | 0.262 s | perfil `loao` previo (con `iat_*` y sin frac_broadcast/n_unique en exclude) |
+| Primera `--final` (descartada), disas→deauth RF | 0.9972 | 1.483 s | ídem |
+| Final reportada, deauth→disas RF | 0.9973 | 0.262 s | perfil `loao` definitivo |
+| Final reportada, disas→deauth RF | 0.9972 | 1.483 s | ídem |
+
+Las cifras de la primera ejecución y de la definitiva **coinciden**: la selección de características no
+movió el resultado (lo esperado, porque `n_disconn` separa por sí solo). Aun así, como la selección se
+hizo tras ver la primera ejecución, se declara como desviación de R6 (ver `decisiones.md`).
+
+## 6. Provenance de la ejecución final
+
+`run_evaluate_test.json` de ambos sentidos registra el **commit que se etiquetará `gate-d`** (verificado:
+`git_commit` del run == HEAD), `git_dirty = False`, con fecha **posterior** a la regeneración de splits
+(`4191123`, 2026-11-10 22:01 −05:00). Los splits `caso_C_*.json` se congelaron en `81a1f41` (commit donde se
+definió la lógica Opción D); entre `81a1f41` y el commit del tag **no cambió nada en `src/` ni en `configs/`
+del experimento** (solo `scripts/`, `tests/`, `docs/` y el `created_at` de los splits), así que la base de
+código del experimento es equivalente y la prueba es reproducible desde el commit etiquetado.
