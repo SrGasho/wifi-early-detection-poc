@@ -15,9 +15,8 @@ captures:
   - id: cap_b
     pattern: "awid3_csv/CSV/2.Disas/*.csv"
 
-# Nombre interno -> nombre en AWID3 (HIPÓTESIS a confirmar en la Fase 1).
-# Si AWID3 trae wlan.fc.type_subtype en vez de tipo y subtipo, reemplazar fc_type/fc_subtype por
-#   fc_type_subtype: wlan.fc.type_subtype
+# Nombre interno -> nombre en AWID3 (CONFIRMADO en la Fase 1; ver docs/datos-awid3.md).
+# AWID3 trae tipo y subtipo por separado (wlan.fc.type / wlan.fc.subtype), no fc_type_subtype.
 columns:
   ts: frame.time_epoch
   frame_number: frame.number

@@ -181,8 +181,12 @@ def normalize_chunk(chunk: pd.DataFrame, *, capture_id: str, file_idx: int, data
 
 def finalize_types(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    for col in ("fc_type", "fc_subtype", "reason_code", "seq"):
+    # fc_type/fc_subtype (0-15) y seq (0-4095) caben en Int16.
+    for col in ("fc_type", "fc_subtype", "seq"):
         df[col] = df[col].astype("Int16")
+    # reason_code llega hasta 65535 en AWID3; Int16 (máx 32767) desborda silenciosamente
+    # envolviendo los valores (p. ej. 32769 -> -32767). Int32 evita la corrupción.
+    df["reason_code"] = df["reason_code"].astype("Int32")
     df["frame_number"] = df["frame_number"].astype("Int64")
     df["signal_dbm"] = df["signal_dbm"].astype("float32")
     for col in ("protected", "mfpc", "mfpr"):
