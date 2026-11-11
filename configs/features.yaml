@@ -13,9 +13,9 @@ allowed:
   - n_unique_src_disconn
   - n_unique_dst_disconn
   - frac_broadcast_dst_disconn
-  - iat_disconn_mean
-  - iat_disconn_std
-  - iat_disconn_min
+  # iat_disconn_mean/std/min RETIRADAS en Gate D (2026-11-10): en ventanas normales hay <2 tramas
+  #   de desconexión, así que iat_* es nulo y se imputa a -1; ese -1 señala casi perfectamente la
+  #   clase normal (fuga por imputación, distinta de la fuga por formato de ts). Ver reporte-gate-d.md.
   - delta_n_disconn
   - frac_protected_mgmt
   - rc_counts            # se expande en rc_<código> para reason_codes, más rc_other

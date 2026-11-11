@@ -29,10 +29,15 @@ el perfil `loao` (sustitutos del subtipo, verificación V2).
 | p99 | 11 682 | 1 |
 | máx | 12 016 | 1 |
 
-Las clases **no se solapan**: la ventana normal con más desconexiones tiene 1; la ventana de ataque con
-menos tiene 82. Cualquier umbral entre 1 y 82 separa perfectamente. Esto explica F1≈1.0 y confirma que el
-fondo de ~320 000 desconexiones "Normal" de cap_b **no interfiere**: están repartidas (casi todas con `src`
-nulo, ver P8) y no se concentran en ninguna ventana de 5 s como sí lo hace el ataque.
+Las clases **no se solapan**: la ventana normal con más desconexiones de gestión tiene 1; la de ataque con
+menos tiene 82. La razón de fondo (corregida en Gate D, ver `datos-awid3.md` P8): en cap_b casi no hay
+desautenticaciones de **gestión** normales — las ~320 000 tramas con subtipo 10/12 y etiqueta Normal son en
+su mayoría de `fc_type` control/data, que **no** cuentan como desconexión (`n_disconn` exige `fc_type=0`).
+Solo 51 desautenticaciones de gestión normales en toda la captura. Por eso ninguna ventana normal acumula
+desconexiones y el ataque (ráfaga de gestión densa) queda perfectamente separado.
+
+**Nota:** las cifras de la tabla del §1 se regeneran tras retirar `iat_disconn_*` de `allowed` (fuga por
+imputación, V3) y tras congelar `gate-d`. Se actualizan en la regeneración final.
 
 **Por qué RF y línea base dan cifras idénticas.** Con esa separación, cualquier modelo acierta. La
 importancia por permutación del RF en validación es **0 para todas las features** (quitar cualquiera no

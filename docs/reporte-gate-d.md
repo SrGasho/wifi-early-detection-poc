@@ -113,8 +113,8 @@ por clase; excluir si difieren de forma clara entre deauth y disas.
 | Partición Caso C con ambas clases en train/val/test | hecho: 503/66/600 ventanas, todas con ambas clases |
 | Latencia medible en test (Caso C) | hecho: `n_start_complete=1` en test |
 | V1: ≥ 99 % de ventanas de ataque de train con trama de desconexión (W=5) | **hecho: 100 %** (130 ventanas). W=5 confirmado. |
-| V2: `frac_broadcast` y `n_unique_*` por clase (loao_exclude) | **hecho**: difieren claramente (frac_broadcast 0.18 vs 0.00; n_unique_src 2.6 vs 0.01). Se añaden a `loao_exclude`. |
-| V3: distribución de `iat_*` por clase tras truncar | **hecho**: `iat_mean`/`iat_std` distinguen; `iat_min` queda 0 en ambas clases (no aporta, documentado). |
+| V2: `frac_broadcast` y `n_unique_*` por clase (loao_exclude) | **hecho, solo con capturas de entrenamiento** (no prueba, R6): difieren claramente en ambos sentidos (deauth→disas train: n_unique_src 2.64 vs 0.01; disas→deauth train: 4.92 vs 0.03). Se añaden a `loao_exclude`. |
+| V3: distribución de `iat_*` por clase tras truncar | **hecho**: `iat_min` queda 0 en ambas clases; además en ventanas normales `iat_*` es nulo→imputado a −1, lo que señala la clase (fuga por imputación). Por eso `iat_disconn_*` se **retiran** de `allowed`. |
 
 ## 4. Riesgos residuales
 
@@ -122,3 +122,13 @@ por clase; excluir si difieren de forma clara entre deauth y disas.
 - `rc_7` casi exclusivo del ataque: F1 en validación puede ser ~1.0 por atajo; el experimento `no_rc` lo mide.
 - Una sola captura por tipo de ataque: la validación es corta y el umbral puede ser inestable.
 - AWID3 no representa la red de la empresa de referencia.
+
+## 5. Nota de proceso: ejecución de prueba descartada
+
+Durante el desarrollo de Gate D hubo una primera ejecución `--final` (exp_id `…2055`/`…2124`) **antes** de
+ampliar `loao_exclude` (commit `f3bcfb7`). Esos resultados se descartaron y los experimentos se regeneraron
+(exp_id `…2129`) con el conjunto de características definitivo. Para que la integridad de R6 sea completa
+—que ningún `--final` preceda a la selección de características— el pipeline se **regenera por entero desde
+el commit limpio etiquetado `gate-d`**: splits, ventanas, modelos y prueba. Las exclusiones de `loao`
+(`frac_broadcast`, `n_unique_*`) se justifican **solo con las capturas de entrenamiento** (sección 2.7 / V2),
+sin mirar la captura de prueba.
