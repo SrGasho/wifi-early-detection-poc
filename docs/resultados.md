@@ -36,8 +36,9 @@ su mayoría de `fc_type` control/data, que **no** cuentan como desconexión (`n_
 Solo 51 desautenticaciones de gestión normales en toda la captura. Por eso ninguna ventana normal acumula
 desconexiones y el ataque (ráfaga de gestión densa) queda perfectamente separado.
 
-**Nota:** las cifras de la tabla del §1 se regeneran tras retirar `iat_disconn_*` de `allowed` (fuga por
-imputación, V3) y tras congelar `gate-d`. Se actualizan en la regeneración final.
+**Nota:** la tabla del §1 se regeneró tras retirar `iat_disconn_*` de `allowed` (fuga por imputación, V3) y
+tras recongelar los splits desde el commit limpio. Las cifras **no cambiaron** (el resultado no dependía de
+`iat_*`: `n_disconn` ya separa), lo que confirma que las features con fuga no sostenían el F1.
 
 **Por qué RF y línea base dan cifras idénticas.** Con esa separación, cualquier modelo acierta. La
 importancia por permutación del RF en validación es **0 para todas las features** (quitar cualquiera no
