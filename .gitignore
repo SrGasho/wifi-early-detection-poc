@@ -22,3 +22,6 @@ results/*
 # Sal de anonimización y variables locales
 .env
 *.salt
+
+# Entregas pasadas (PDF de referencia, pesados): no se versionan
+docs/Entregas_pasadas/
