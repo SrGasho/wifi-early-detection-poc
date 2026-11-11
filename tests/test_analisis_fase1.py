@@ -99,15 +99,14 @@ def test_mode_timestamp_ataque_entero_normal_fraccionario(proyecto_csv):
     lines = A.mode_timestamp(proyecto_csv["data_cfg"], _args(proyecto_csv["root"]))
     texto = "\n".join(lines)
     assert "cap_a" in texto and "cap_b" in texto
-    # El ataque (subtipo 12/10) debe tener fracción de ts entero = 1.0000.
-    assert "| Deauth | 12 |" in texto
+    # El ataque (gestión type=0, subtipo 12) debe tener fracción de ts entero = 1.0000.
+    assert "| Deauth | 0 | 12 |" in texto
     for ln in lines:
-        if "| Deauth | 12 |" in ln:
+        if "| Deauth | 0 | 12 |" in ln:
             assert ln.strip().endswith("1.0000 |")
-    # Las balizas Normal (subtipo 8) tienen ts mayormente fraccionario: fracción baja (< 0.5),
-    # claramente distinta del 1.0000 del ataque. (1 de cada 10 balizas cae en entero por el paso 0.1.)
+    # Las balizas Normal (type=0 subtipo 8) tienen ts mayormente fraccionario: fracción baja (< 0.5).
     for ln in lines:
-        if "| Normal | 8 |" in ln:
+        if "| Normal | 0 | 8 |" in ln:
             frac = float(ln.strip().rstrip("|").strip().split("|")[-1])
             assert frac < 0.5
 
@@ -115,9 +114,10 @@ def test_mode_timestamp_ataque_entero_normal_fraccionario(proyecto_csv):
 def test_mode_cruce_reason7_solo_en_ataque(proyecto_csv):
     lines = A.mode_cruce(proyecto_csv["data_cfg"], _args(proyecto_csv["root"]))
     texto = "\n".join(lines)
-    assert "Subtipo por etiqueta" in texto
-    assert "Origen de las desconexiones etiquetadas como normales" in texto
-    # El motivo 7 aparece en el ataque (deauth/disas), no en Normal.
+    assert "Tipo × subtipo por etiqueta" in texto
+    assert "desconexiones de gestión etiquetadas como normales" in texto.lower() or \
+           "Origen de las desconexiones de gestión" in texto
+    # El motivo 7 aparece en el ataque de gestión (deauth/disas), no en Normal.
     assert "| Deauth | 12 | 7 |" in texto or "| Disas | 10 | 7 |" in texto
 
 

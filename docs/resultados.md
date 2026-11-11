@@ -44,14 +44,17 @@ tras recongelar los splits desde el commit limpio. Las cifras **no cambiaron** (
 importancia por permutación del RF en validación es **0 para todas las features** (quitar cualquiera no
 cambia la métrica, porque varias separan por sí solas). La línea base usa directamente `n_disconn`. Ambos
 convergen a la misma frontera trivial. No es un error de pipeline: es que el problema es linealmente
-separable por una sola característica. Features del RF (perfil `loao`, sin sustitutos del subtipo):
-`n_frames_total, n_mgmt, n_data, ratio_data_mgmt, n_disconn, rate_disconn, iat_disconn_*, delta_n_disconn,
+separable por una sola característica. Features del RF (perfil `loao`, **sin `iat_disconn_*`** —retiradas,
+ver abajo— y sin sustitutos del subtipo):
+`n_frames_total, n_mgmt, n_data, ratio_data_mgmt, n_disconn, rate_disconn, delta_n_disconn,
 frac_protected_mgmt, rc_other, seq_jump_max, signal_std_disconn`.
 
-**Verificación de `iat_*` tras truncar (prueba):** `iat_disconn_mean` (med 0.003) e `iat_disconn_std`
-(med 0.057) tienen valores en el ataque; en ventanas normales son `nan` (no hay pares de desconexión que
-promediar). `iat_disconn_min` queda 0 en el 100 % del ataque tras truncar, así que **no aporta** y se
-documenta como tal. La fuga de formato quedó mitigada (el truncado iguala ambas clases en el cálculo).
+**`iat_disconn_*` retiradas de `allowed` (V3, fuga por imputación):** en ventanas normales hay <2
+desconexiones de gestión, así que `iat_*` es nulo → imputado a −1, y ese −1 señala la clase normal casi
+perfectamente (fuga distinta de la del formato de `ts`). Por eso las tres (`mean/std/min`) **ya no están
+en el modelo**. El truncado de `ts` en `compute_window_features` queda como código sin efecto sobre las
+features usadas (se conserva documentado por si se reincorporan). Al regenerar sin ellas, las cifras del
+§1 no cambiaron: `n_disconn` ya separa.
 
 ## 4. Análisis de sensibilidad (solo validación, nunca prueba)
 
@@ -88,3 +91,7 @@ débil de robustez, no una prueba. Se declara explícitamente como limitación.
 - Caso C mide transferencia deauth↔disas (ataques relacionados), no generalización a ataques de otra
   naturaleza.
 - Validación corta (66 ventanas): el umbral puede ser inestable.
+- **Integridad de R6 (desviación):** hubo dos ejecuciones `--final`; la primera se descartó y el conjunto
+  de características se decidió después de ella (no fue un test ciego perfecto). El pipeline se regeneró
+  desde un commit limpio y las exclusiones se re-justificaron solo con entrenamiento, pero la desviación
+  se declara explícitamente. Ver `decisiones.md` (fila "Integridad de R6") y `reporte-gate-d.md` §5.

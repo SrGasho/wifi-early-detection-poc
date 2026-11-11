@@ -26,7 +26,8 @@ from src import data_loader
 from src.preprocessing import to_bool, to_float, to_int
 
 BROADCAST_MAC = "ff:ff:ff:ff:ff:ff"
-DISCONN_SUBTYPES = (10, 12)    # disas, deauth
+TYPE_MGMT = 0                  # una desconexión real es de gestión (fc_type=0), no control/data
+DISCONN_SUBTYPES = (10, 12)    # disas, deauth (solo cuentan como desconexión si fc_type=0)
 ASSOC_REQ_SUBTYPES = (0, 2)    # solicitudes de asociación y reasociación (las envía el cliente)
 ASSOC_SUBTYPES = (0, 1, 2, 3)  # solicitudes y respuestas de asociación y reasociación
 WINDOW_S = 60.0                # ventana para contar reasociaciones alrededor de cada episodio
@@ -46,11 +47,13 @@ def _col(chunk: pd.DataFrame, name: str) -> pd.Series:
 
 
 def load_rows(data_cfg: dict, capture_id: str):
-    """Bloques con columnas tipadas: ts, label, subtype, src, bcast, reason, protected."""
+    """Bloques con columnas tipadas: ts, label, type, subtype, src, bcast, reason, protected."""
     for _, chunk in data_loader.iter_chunks(data_cfg, capture_id):
         df = pd.DataFrame(index=chunk.index)
         df["ts"], _ = to_float(chunk["ts"])
         df["label"] = chunk["label"].astype("string").str.strip().fillna("<nulo>").astype("object")
+        typ, _ = to_int(_col(chunk, "fc_type"))
+        df["type"] = typ.fillna(-1).astype("int64")
         sub, _ = to_int(_col(chunk, "fc_subtype"))
         df["subtype"] = sub.fillna(-1).astype("int64")
         df["src"] = _col(chunk, "src").astype("object")
@@ -81,45 +84,55 @@ def mode_timestamp(data_cfg: dict, args) -> list[str]:
             df = df.dropna(subset=["ts"])
             part = pd.DataFrame({
                 "label": df["label"],
+                "type": df["type"],
                 "subtype": df["subtype"],
                 "entero": (df["ts"] % 1 == 0).astype("int64"),
                 "n": 1,
             })
-            total = _acc(total, part.groupby(["label", "subtype"]).sum())
-        lines += [f"## {cid}", "", "| Etiqueta | Subtipo | Tramas | Ts enteros | Fracción |",
-                  "|---|---|---|---|---|"]
-        for (lab, sub), row in total.iterrows():
+            total = _acc(total, part.groupby(["label", "type", "subtype"]).sum())
+        lines += [f"## {cid}", "",
+                  "Desglosado por fc_type: una desconexión real es type=0 (gestión).", "",
+                  "| Etiqueta | Tipo | Subtipo | Tramas | Ts enteros | Fracción |",
+                  "|---|---|---|---|---|---|"]
+        for (lab, ty, sub), row in total.iterrows():
             frac = row["entero"] / row["n"] if row["n"] else 0.0
-            lines.append(f"| {lab} | {sub} | {int(row['n'])} | {int(row['entero'])} | {frac:.4f} |")
+            lines.append(f"| {lab} | {ty} | {sub} | {int(row['n'])} | {int(row['entero'])} | {frac:.4f} |")
         lines.append("")
     return lines
 
 
 def mode_cruce(data_cfg: dict, args) -> list[str]:
     normal = {str(v) for v in data_cfg["labels"]["normal"]}
-    lines = ["# Cruce de tramas por etiqueta, subtipo, motivo, protección y destino", ""]
+    lines = ["# Cruce de tramas por etiqueta, tipo, subtipo, motivo, protección y destino", "",
+             "Una desconexión REAL es de gestión: fc_type=0 y subtipo 10/12. Las tramas de control (type=1)",
+             "o datos (type=2) con el mismo número de subtipo NO son desautenticaciones.", ""]
     for cid in C.capture_ids(data_cfg):
         total, srcs = None, None
         for df in load_rows(data_cfg, cid):
-            g = df.assign(n=1).groupby(["label", "subtype", "reason", "protected", "bcast"])["n"].sum()
+            g = df.assign(n=1).groupby(["label", "type", "subtype", "reason", "protected", "bcast"])["n"].sum()
             total = _acc(total, g)
-            d = df[df["subtype"].isin(DISCONN_SUBTYPES) & df["label"].isin(list(normal))]
+            # desconexión real = gestión (type=0) y subtipo 10/12, etiqueta normal
+            d = df[(df["type"] == TYPE_MGMT) & df["subtype"].isin(DISCONN_SUBTYPES)
+                   & df["label"].isin(list(normal))]
             srcs = _acc(srcs, d["src"].map(short).value_counts())
         t = total.reset_index()
-        lines += [f"## {cid}", "", "### Subtipo por etiqueta", "",
-                  "| Etiqueta | Subtipo | Tramas |", "|---|---|---|"]
-        for (lab, sub), n in t.groupby(["label", "subtype"])["n"].sum().items():
-            lines.append(f"| {lab} | {sub} | {int(n)} |")
-        dis = t[t["subtype"].isin(DISCONN_SUBTYPES)].sort_values("n", ascending=False).head(60)
-        lines += ["", "### Desconexiones: motivo, protección y broadcast (60 filas principales)", "",
+        lines += [f"## {cid}", "", "### Tipo × subtipo por etiqueta (desconexiones)", "",
+                  "| Etiqueta | Tipo | Subtipo | Tramas |", "|---|---|---|---|"]
+        td = t[t["subtype"].isin(DISCONN_SUBTYPES)]
+        for (lab, ty, sub), n in td.groupby(["label", "type", "subtype"])["n"].sum().items():
+            lines.append(f"| {lab} | {ty} | {sub} | {int(n)} |")
+        # Solo las desconexiones de gestión (type=0) para motivo/protección/broadcast.
+        dis = t[(t["type"] == TYPE_MGMT) & t["subtype"].isin(DISCONN_SUBTYPES)].sort_values(
+            "n", ascending=False).head(60)
+        lines += ["", "### Desconexiones de GESTIÓN (type=0): motivo, protección y broadcast (top 60)", "",
                   "| Etiqueta | Subtipo | Motivo | Protegida | Broadcast | Tramas |",
                   "|---|---|---|---|---|---|"]
         for _, r in dis.iterrows():
             lines.append(f"| {r['label']} | {r['subtype']} | {r['reason']} | {r['protected']} | "
                          f"{r['bcast']} | {int(r['n'])} |")
-        lines += ["", "### Origen de las desconexiones etiquetadas como normales", ""]
+        lines += ["", "### Origen de las desconexiones de gestión etiquetadas como normales", ""]
         if srcs is None or srcs.empty:
-            lines.append("Sin desconexiones etiquetadas como normales.")
+            lines.append("Sin desconexiones de gestión etiquetadas como normales.")
         else:
             top = srcs.sort_values(ascending=False)
             lines += [f"- Fuentes distintas (hash): {len(srcs)}",
