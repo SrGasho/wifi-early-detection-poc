@@ -17,7 +17,37 @@ el perfil `loao` (sustitutos del subtipo, verificación V2).
 | Línea base (umbral n_disconn) | deauth→disas | 1.000 | 1.00 | 1.00 | 1/1 | 0.262 s | 0.0 |
 | Línea base (umbral n_disconn) | disas→deauth | 0.997 | 1.00 | 0.994 | 1/1 | 1.483 s | 0.0 |
 
-## 2. Análisis de sensibilidad (solo validación, nunca prueba)
+## 3. Por qué estas cifras (evidencia de separabilidad)
+
+**Distribución de `n_disconn` en prueba (deauth→disas, test = cap_b):**
+
+| cuantil | ventanas de ataque | ventanas normales |
+|---|---|---|
+| mín | 82 | 0 |
+| mediana | 1 229 | 0 |
+| p90 | 4 107 | 0 |
+| p99 | 11 682 | 1 |
+| máx | 12 016 | 1 |
+
+Las clases **no se solapan**: la ventana normal con más desconexiones tiene 1; la ventana de ataque con
+menos tiene 82. Cualquier umbral entre 1 y 82 separa perfectamente. Esto explica F1≈1.0 y confirma que el
+fondo de ~320 000 desconexiones "Normal" de cap_b **no interfiere**: están repartidas (casi todas con `src`
+nulo, ver P8) y no se concentran en ninguna ventana de 5 s como sí lo hace el ataque.
+
+**Por qué RF y línea base dan cifras idénticas.** Con esa separación, cualquier modelo acierta. La
+importancia por permutación del RF en validación es **0 para todas las features** (quitar cualquiera no
+cambia la métrica, porque varias separan por sí solas). La línea base usa directamente `n_disconn`. Ambos
+convergen a la misma frontera trivial. No es un error de pipeline: es que el problema es linealmente
+separable por una sola característica. Features del RF (perfil `loao`, sin sustitutos del subtipo):
+`n_frames_total, n_mgmt, n_data, ratio_data_mgmt, n_disconn, rate_disconn, iat_disconn_*, delta_n_disconn,
+frac_protected_mgmt, rc_other, seq_jump_max, signal_std_disconn`.
+
+**Verificación de `iat_*` tras truncar (prueba):** `iat_disconn_mean` (med 0.003) e `iat_disconn_std`
+(med 0.057) tienen valores en el ataque; en ventanas normales son `nan` (no hay pares de desconexión que
+promediar). `iat_disconn_min` queda 0 en el 100 % del ataque tras truncar, así que **no aporta** y se
+documenta como tal. La fuga de formato quedó mitigada (el truncado iguala ambas clases en el cálculo).
+
+## 4. Análisis de sensibilidad (solo validación, nunca prueba)
 
 | Experimento | F1 validación | Qué mide |
 |---|---|---|
@@ -25,7 +55,10 @@ el perfil `loao` (sustitutos del subtipo, verificación V2).
 | RF W=10 s | 1.000 | sensibilidad al ancho de ventana (largo) |
 | RF sin `rc_*` (perfil no_rc) | 1.000 | aporte de los códigos de motivo (riesgo de atajo) |
 
-## 3. Interpretación
+**Limitación: la validación tiene solo 66 ventanas.** Con tan pocas, que W=3/5/10 den F1=1.0 es una señal
+débil de robustez, no una prueba. Se declara explícitamente como limitación.
+
+## 5. Interpretación
 
 - **El problema es casi separable en estos datos.** El ataque es una ráfaga densa (cientos de tramas de
   desconexión por segundo), así que incluso un umbral sobre `n_disconn` alcanza F1≈1.0. El Random Forest
@@ -40,7 +73,7 @@ el perfil `loao` (sustitutos del subtipo, verificación V2).
 - **Caso C excluye los sustitutos del subtipo** y aun así el F1 se mantiene alto, lo que indica que la
   transferencia entre deauth y disas se apoya en características agregadas de desconexión, no en el subtipo.
 
-## 4. Limitaciones de estos resultados
+## 6. Limitaciones de estos resultados
 
 - Un solo episodio de ataque por captura: la latencia es un valor individual por sentido, sin media ni
   dispersión. Las cifras de detección vienen de una sola ráfaga.
