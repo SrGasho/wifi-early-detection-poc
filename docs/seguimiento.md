@@ -10,9 +10,11 @@ Registra el estado de cada fase, las verificaciones abiertas y los acuerdos. Los
 |---|---|---|
 | 0. Preparación | Código escrito. 93 pruebas en verde. | — |
 | 1. Inspección de AWID3 | Cerrada (PR #1, merged a `main`). 12/14 preguntas; P4/P5 indicios. | — |
-| 2. Gate D (partición, episodios, ventanas) | Implementado en rama `gate-d`. Decisiones en `decisiones.md` y `reporte-gate-d.md`. | PR de Gate D + verificaciones 3.1. |
-| 3. Entrenamiento (baseline + RF) | En curso: RF Caso C deauth→disas entrenado; F1 val = 1.0. | Baselines Caso C; sentido disas→deauth; sensibilidad. |
-| 4-8 | No iniciadas. | Ver plan. |
+| 2. Gate D (partición, episodios, ventanas) | Implementado y verificado (V1/V2/V3). | PR de Gate D. |
+| 3. Entrenamiento (baseline + RF) | Hecho: RF y baseline, ambos sentidos Caso C. | — |
+| 4. Evaluación (ventana + latencia) | Hecho: test final ambos sentidos; resultados en `docs/resultados.md`. | — |
+| 5. Sensibilidad (W=3,10; sin rc) | Hecho (solo validación). F1=1.0 en los tres. | — |
+| 6-8 (replay, mitigación) | No iniciadas. | Ver plan. |
 
 ## 2. Hallazgo clave de Gate D: Caso B no viable, se usa Caso C
 
