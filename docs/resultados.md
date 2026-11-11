@@ -12,10 +12,15 @@ el perfil `loao` (sustitutos del subtipo, verificación V2).
 
 | Modelo | Sentido | F1 ventana | Precisión | Recall | Detección | Latencia | Falsas alertas/h |
 |---|---|---|---|---|---|---|---|
-| Random Forest | deauth→disas | 1.000 | 1.00 | 1.00 | 1/1 | 0.262 s | 0.0 |
-| Random Forest | disas→deauth | 0.997 | 1.00 | 0.994 | 1/1 | 1.483 s | 0.0 |
-| Línea base (umbral n_disconn) | deauth→disas | 1.000 | 1.00 | 1.00 | 1/1 | 0.262 s | 0.0 |
-| Línea base (umbral n_disconn) | disas→deauth | 0.997 | 1.00 | 0.994 | 1/1 | 1.483 s | 0.0 |
+| Random Forest | deauth→disas | 0.9973 | 1.000 | 0.9946 | 1/1 | 0.262 s | 0.0 |
+| Random Forest | disas→deauth | 0.9972 | 1.000 | 0.9944 | 1/1 | 1.483 s | 0.0 |
+| Línea base (umbral n_disconn) | deauth→disas | 1.0000 | 1.000 | 1.0000 | 1/1 | 0.262 s | 0.0 |
+| Línea base (umbral n_disconn) | disas→deauth | 0.9972 | 1.000 | 0.9944 | 1/1 | 1.483 s | 0.0 |
+
+Cifras tomadas de `run_evaluate_test.json` / `metrics_window_test.json` de cada experimento. La ejecución
+final se registró con `git_commit = 6a49bb4`, `git_dirty = False` (ver `reporte-gate-d.md` §6). El commit que
+se etiquetará `gate-d` es ese mismo; entre el commit del run y el tag no hay cambios en `src/` ni `configs/`
+(solo docs/scripts/tests), así que la correspondencia código↔resultado se mantiene.
 
 ## 3. Por qué estas cifras (evidencia de separabilidad)
 
@@ -71,8 +76,9 @@ débil de robustez, no una prueba. Se declara explícitamente como limitación.
 
 - **El problema es casi separable en estos datos.** El ataque es una ráfaga densa (cientos de tramas de
   desconexión por segundo), así que incluso un umbral sobre `n_disconn` alcanza F1≈1.0. El Random Forest
-  **no supera** a la línea base; empatan. Esto se reporta sin forzar una conclusión de superioridad
-  (artículo III-E).
+  **no supera** a la línea base: en deauth→disas el baseline da F1=1.0000 y el RF 0.9973 (una ventana de
+  ataque menos detectada); en disas→deauth ambos dan 0.9972. Es decir, el RF **iguala o queda marginalmente
+  por debajo** del umbral simple. Se reporta sin forzar una conclusión de superioridad (artículo III-E).
 - **El modelo NO depende del atajo del código de motivo.** El experimento sin `rc_*` mantiene F1=1.0 en
   validación, así que la detección no se apoya en el código 7 (casi exclusivo del ataque). Esto mitiga la
   preocupación del atajo registrada en Gate D 2.6.
