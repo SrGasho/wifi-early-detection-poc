@@ -29,7 +29,7 @@ evidencia quede en el repositorio aunque la salida original no se suba.
 |---|---|---|---|---|
 | 1 | ¿Cuántas capturas independientes existen por ataque? | Deauth: 33 archivos CSV (`cap_a`); Disas: 41 archivos CSV (`cap_b`). Cada ataque está en su carpeta. | `discover.json`; `report.md` (cap_a/cap_b: n.º de archivos) | caso A, B o C |
 | 2 | ¿Los eventos aparecen en tramos contiguos? | Sí, **demostrado con la línea de tiempo**. El ataque dura ~180 s (no toda la captura) y ocupa el 100 % de los bloques de 10 s (cap_a 18/18, cap_b 19/19), con 0 bloques vacíos. Mediana de tramas objetivo por bloque: cap_a ~2190; cap_b ~2458 (mediana), pero el promedio de cap_b es ~3950 (75 131 tramas en 19 bloques), por la mayor densidad de Disas. | `analisis_linea.txt`; `episodes_exploratory.json` | ubicación de cortes |
-| 3 | ¿Existen marcas temporales utilizables? | Sí. `ts` 0 % nulo. **Las tramas de ataque (gestión, type=0) tienen `ts` entero en el 100 %.** Las desautenticaciones de gestión Normal son muy pocas (cap_a 72 = 69 disas + 3 deauth; cap_b 51 = 45 disas + 6 deauth), así que no hay una comparación de "mismo subtipo gestión" significativa. **El `ts` entero NO es exclusivo del ataque**: tramas Normal de gestión de otros subtipos (2 y 3) también tienen `ts` entero casi siempre (~0.98–1.00), así que la fracción no separa por sí sola. Las tramas Normal con subtipo 12 pero type=1 (control, ~300k) sí tienen fracción ~0.49–0.59, pero no son desautenticaciones. Riesgo residual: `iat_disconn_*` se derivan de `ts` entero → se retiraron de `allowed` (Gate D). | `analisis_timestamp.txt` (desglosado por type) | ventanas y latencia; features retiradas |
+| 3 | ¿Existen marcas temporales utilizables? | Sí. `ts` 0 % nulo. **Las tramas de ataque (gestión, type=0) tienen `ts` entero en el 100 %.** Las desautenticaciones de gestión Normal son muy pocas (cap_a 72 = 69 disas + 3 deauth; cap_b 51 = 45 disas + 6 deauth), así que no hay una comparación de "mismo subtipo gestión" significativa. **El `ts` entero NO es exclusivo del ataque**: en tramas de gestión normales de acción (subtipo 13) la fracción entera es 0,96 y 0,999, así que la fracción no separa la clase por sí sola. Las tramas Normal con subtipo 12 pero type=1 (control, ~300k) sí tienen fracción ~0.49–0.59, pero no son desautenticaciones. Riesgo residual: `iat_disconn_*` se derivan de `ts` entero → se retiraron de `allowed` (Gate D). | `analisis_timestamp.txt` (desglosado por type) | ventanas y latencia; features retiradas |
 | 4 | ¿Los clientes se reasocian después del evento? | Indicio, no concluyente (1 captura, referencia no independiente). En cap_b las solicitudes de (re)asociación caen de 358 (40 clientes) antes a 18 (4 clientes) tras el episodio; en cap_a el ataque ocupa toda la captura y no hay "después" limpio. | `analisis_reasociacion.txt` | referencia de impacto |
 | 5 | ¿Existe un efecto observable que pueda utilizarse como referencia? | Parcial: la caída de reasociaciones tras el ataque (P4) es el único efecto medible, pero con 1 captura no es tráfico de referencia independiente. Evitar el término "anticipación". | `analisis_reasociacion.txt` | uso del término "anticipación" |
 | 6 | ¿Qué proporción de tramas tiene protección activada? | `cap_a`: 542 003 / 1 626 469 = **33.3 %** con `protected=1`. `cap_b`: 720 177 / 2 013 716 = **35.8 %**. | `report.md` (tabla "Protección activa") | `frac_protected_mgmt` |
@@ -71,18 +71,11 @@ Confirmado en la Fase 1 y copiado a `configs/data.yaml`.
 
 El dato crudo `frame.time_epoch` tiene resolución sub-milisegundo en tramas normales
 (ej. `1608306178.4826`, `.58501`), pero **las tramas de ataque etiquetadas `Deauth`/`Disas`
-tienen el timestamp entero en el 100 %** (parte decimal = 0). El artefacto **no es exclusivo
-del ataque**: tramas Normal de los subtipos 2 y 3 también tienen `ts` entero casi al 100 %
-(0.98 y 1.00), y el subtipo 13 entre 0.82 (cap_a) y 0.95 (cap_b) (`analisis_timestamp.txt`), así que la fracción de `ts` depende del subtipo y del origen de la
-trama, no solo de la clase. Aun así, para los subtipos de desconexión (10/12) la diferencia
-ataque (1.00) vs Normal (0.49–0.59) es casi perfecta y las features `iat_disconn_mean/std/min`
-se derivan de `ts`, por lo que el modelo podría aprender este canal lateral; R2 protege las
-etiquetas pero no esto.
+tienen el timestamp entero en el 100 %** (parte decimal = 0).
 
-Decisión para Gate D (preferida: la primera, por eliminar la diferencia para todas las clases):
-- **Truncar todo `ts` a segundo entero** antes de calcular las features (iguala ataque y Normal);
-  después hay que reconfirmar que las features de tiempo conservan señal real, o
-- Retirar `iat_disconn_std`, `iat_disconn_min` e `iat_disconn_mean` de `allowed`.
+El artefacto **no es exclusivo del ataque**: en tramas de gestión normales de acción (subtipo 13) la fracción de 	s entero es 0,96 en cap_a y 0,999 en cap_b (desglose por tipo en nalisis_timestamp.txt). Las desconexiones de gestión normales son muy pocas (51 y 72), así que no hay una comparación fiable entre ataque y normal para los subtipos 10 y 12. La diferencia de 0,49 a 0,59 que aparecía en versiones anteriores correspondía a tramas de control (tipo 1), no a desconexiones, y se retira. Por eso la propiedad no separa la clase por sí sola, pero queda el riesgo de que las características derivadas de intervalos la aprovechen.
+
+Decisión tomada en Gate D: `iat_disconn_mean`, `iat_disconn_std` e `iat_disconn_min` se retiraron de `allowed` (fuga por imputación, ver `decisiones.md`). El truncado de `ts` previsto para estas características no tiene efecto sobre las características usadas.
 
 Esto también limita la latencia de alerta a 1 s (R3/R4).
 
