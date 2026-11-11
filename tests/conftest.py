@@ -108,7 +108,13 @@ def experiment_dict(root: Path, name: str, **overrides) -> dict:
 
 @pytest.fixture
 def project(tmp_path, frames_a, frames_b):
-    """Proyecto temporal con configuraciones completas y tramas ya normalizadas."""
+    """Proyecto temporal con configuraciones completas y tramas ya normalizadas.
+
+    Nota (Gate D): este fixture usa Caso B con datos sintéticos de ráfagas INTERCALADAS, donde Caso B
+    sí es una partición de 3 vías viable y da cobertura de test a `case_b`. En AWID3 real el ataque es
+    un bloque al final (una sola frontera), por eso el PoC usa Caso C como principal (ver docs/
+    reporte-gate-d.md 2.1); los configs de Caso B se quitaron del repo pero la lógica se sigue probando aquí.
+    """
     root = tmp_path
     data = {
         "paths": {k: str(root / "data" / k) for k in ("raw", "interim", "processed")},

@@ -83,11 +83,13 @@ wifi-early-detection-poc/
 │   ├── features.yaml             # lista permitida y exclusiones del Caso C
 │   ├── splits/                   # particiones congeladas (Fase 2, se versionan)
 │   └── experiments/
-│       ├── exp_baseline.yaml               # línea base principal
-│       ├── exp_rf.yaml                     # Random Forest principal (define la partición)
-│       ├── exp_rf_sens_W_template.yaml     # plantilla: un archivo por cada W de sensibilidad
-│       ├── exp_loao_deauth_to_disas.yaml   # Caso C, un sentido
-│       └── exp_loao_disas_to_deauth.yaml   # Caso C, sentido inverso
+│       ├── exp_loao_deauth_to_disas.yaml      # Caso C (principal), un sentido
+│       ├── exp_loao_disas_to_deauth.yaml      # Caso C (principal), sentido inverso
+│       ├── exp_baseline_deauth_to_disas.yaml  # línea base Caso C, un sentido
+│       ├── exp_baseline_disas_to_deauth.yaml  # línea base Caso C, sentido inverso
+│       ├── exp_rf_sens_W3.yaml                # sensibilidad W=3 (solo validación)
+│       ├── exp_rf_sens_W10.yaml               # sensibilidad W=10 (solo validación)
+│       └── exp_loao_deauth_to_disas_no_rc.yaml # sensibilidad sin rc_* (solo validación)
 │
 ├── docs/
 │   ├── arquitectura.md
@@ -237,37 +239,40 @@ loao_exclude:
 reason_codes: ["<lista fija decidida en Gate D>"]
 ```
 
-### 4.3 `configs/experiments/exp_rf.yaml` (principal)
+### 4.3 `configs/experiments/exp_loao_deauth_to_disas.yaml` (principal, Caso C)
+
+Ejemplo con los valores ya congelados en Gate D (ver `docs/decisiones.md`). El otro sentido es
+`exp_loao_disas_to_deauth.yaml`.
 
 ```yaml
-name: rf_main
+name: loao_deauth_to_disas
 role: main                      # main | sensitivity
 seed: 42
 data_config: configs/data.yaml
 features_config: configs/features.yaml
-split_file: configs/splits/caso_B.json
+split_file: configs/splits/caso_C_deauth_to_disas.json
 
 target: binary                  # DECIDIDO: normal vs. ataque de desconexión
 
 window:
-  W_seconds: <Gate D, desde estadísticas de entrenamiento (sección 8.2.1)>
-  S_seconds: <Gate D, por resolución y costo (sección 8.2.1)>
+  W_seconds: 5.0                # Gate D
+  S_seconds: 1.0                # Gate D (resolución del dato = 1 s)
   k: 1                          # fijo
 
-split:                          # solo el experimento principal congela la partición
-  case: B                       # A | B | C
-  purge_seconds: <Gate D, >= W y >= max_W_seconds>
-  max_W_seconds: <mayor W de los experimentos de sensibilidad>
-  proportions: [0.6, 0.2, 0.2]
-  snap_to_silence: true
+split:
+  case: C                       # Caso C es la partición principal (Caso B descartado, 8.4)
+  train_attack: deauth
+  test_attack: disas
+  val_fraction: 0.2
+  purge_seconds: 10.0           # >= mayor W de sensibilidad (R7)
+  max_W_seconds: 10.0
 
 episodes:
-  T_method: percentile_multiple # fixed | percentile_multiple
-  T_percentile: <Gate D>
-  T_multiplier: <Gate D>        # T = multiplicador × percentil de intervalos entre tramas objetivo de entrenamiento
+  T_method: fixed               # Gate D (percentile degenera con IAT ~0)
+  T_seconds: 2.0
 
 alerts:
-  max_gap_seconds: <Gate D, mínimo S>
+  max_gap_seconds: 1.0          # Gate D (= S)
 
 model:
   type: random_forest
@@ -284,16 +289,16 @@ imputation:
 threshold:
   criterion: max_f1_validation
 
-features_profile: allowed       # o loao
+features_profile: loao          # Caso C usa 'loao' (excluye sustitutos del subtipo)
 
 mitigation:                     # no afecta ninguna métrica de detección
-  tau_high: <valor>
-  cooldown_seconds: <valor>
+  tau_high: 0.9
+  cooldown_seconds: 30.0
 ```
 
 ### 4.4 Experimentos de sensibilidad
 
-**Cada configuración alternativa de `W` es un experimento independiente**, con su propio archivo (`exp_rf_sens_W<valor>.yaml`, a partir de la plantilla), su propio `exp_id`, sus propias ventanas, su propio modelo, su propio `metadata.json` y sus propias métricas de validación. Comparte con el principal la partición, `S`, `T`, la rejilla de hiperparámetros, el entrenamiento y la validación.
+**Cada configuración alternativa de `W` es un experimento independiente**, con su propio archivo (`exp_rf_sens_W3.yaml`, `exp_rf_sens_W10.yaml`), su propio `exp_id`, sus propias ventanas, su propio modelo, su propio `metadata.json` y sus propias métricas de validación. Comparte con el principal la partición, `S`, `T`, la rejilla de hiperparámetros, el entrenamiento y la validación. Además hay un experimento de sensibilidad sin códigos de motivo (`exp_loao_deauth_to_disas_no_rc.yaml`, perfil `no_rc`).
 
 - Llevan `role: sensitivity`. El código rechaza `--final` para ellos: nunca se ejecutan sobre la prueba.
 - No reutilizan el modelo entrenado con la configuración principal.
