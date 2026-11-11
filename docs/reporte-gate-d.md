@@ -133,14 +133,17 @@ resultados se descartaron y se regeneraron con el conjunto de características d
 
 | Ejecución | F1 ventana | Latencia | Nota |
 |---|---|---|---|
-| Primera `--final` (descartada), deauth→disas RF | 0.9973 | 0.262 s | perfil `loao` previo (con `iat_*` y sin frac_broadcast/n_unique en exclude) |
-| Primera `--final` (descartada), disas→deauth RF | 0.9972 | 1.483 s | ídem |
-| Final reportada, deauth→disas RF | 0.9973 | 0.262 s | perfil `loao` definitivo |
+| Primera `--final` (descartada), deauth→disas RF | 0.9973 (nota del autor, no verificable) | 0.262 s | perfil `loao` previo (con `iat_*` y sin frac_broadcast/n_unique en exclude) |
+| Primera `--final` (descartada), disas→deauth RF | 0.9972 (nota del autor, no verificable) | 1.483 s | ídem |
+| Final reportada, deauth→disas RF | 0.9973 | 0.262 s | perfil `loao` definitivo (verificado en `run_evaluate_test.json`) |
 | Final reportada, disas→deauth RF | 0.9972 | 1.483 s | ídem |
 
 Las cifras de la primera ejecución y de la definitiva **coinciden**: la selección de características no
 movió el resultado (lo esperado, porque `n_disconn` separa por sí solo). Aun así, como la selección se
 hizo tras ver la primera ejecución, se declara como desviación de R6 (ver `decisiones.md`).
+
+> Los valores de la primera ejecución provienen de la nota del autor tomada en el momento; el archivo de
+> esa ejecución se eliminó al descartarla, así que no se puede verificar contra el registro original.
 
 ## 6. Provenance de la ejecución final
 
