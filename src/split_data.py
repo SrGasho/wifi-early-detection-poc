@@ -124,9 +124,9 @@ def case_c(split_cfg: dict, targets: dict, extents: dict, exploratory: pd.DataFr
     que train y val tengan a la vez ambas clases con un solo corte.
 
     Solución (Opción D, ver docs/reporte-gate-d.md 2.1):
-    - val: franja [inicio_ataque - m, inicio_ataque + m] de la captura de entrenamiento. Cruza la
-      frontera, así que contiene tráfico normal (antes) y de ataque (después). m = val_fraction *
-      duración del ataque.
+    - val: franja que empieza val_fraction veces la duración del ataque antes de su inicio y termina
+      en el cuantil val_fraction de sus tramas más 1 s, recortada a la captura y a la purga. Cruza la
+      frontera normal->ataque, así que contiene tráfico normal (antes) y de ataque (después).
     - train: el RESTO de la captura de entrenamiento, en DOS unidades con purga alrededor de val:
       [inicio, val_lo - purge] (normal temprano) y [val_hi + purge, fin] (ataque tardío). Agregadas,
       train tiene ambas clases.
