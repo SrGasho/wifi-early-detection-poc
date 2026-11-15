@@ -5,6 +5,8 @@ Este documento tiene dos partes:
 1. **Guía paso a paso** para construir en Cisco Packet Tracer la topología del paper (sección de diseño), configurarla y comprobar que las VLAN y la ACL funcionan. Está pensada para quien nunca ha usado el programa.
 2. **Lista de pendientes** de la sección de diseño e implementación del paper, con qué hace falta, cómo cerrarlo y en qué orden.
 
+> **Diferencias entre esta guía y lo construido (15-nov).** La topología se construyó con el MCP y se desvía de la guía en tres puntos: (1) se añadió un router `ISP` con NAT (decisión T5) y una ACL de gestión `ACL-CORP-GESTION` (T6), con dos pruebas más; (2) el `AccessPoint-PT-AC` no admite IP, así que la IP 192.168.20.2 del §1.9 no se pudo configurar, y su puerto se llama `Port 0`, no «Ethernet»; (3) el SSID `EMPRESA` queda abierto, sin WPA2. El detalle y los resultados están en `docs/diagramas/pruebas-topologia.md`.
+>
 > Nota sobre el alcance. Packet Tracer simula la red a nivel lógico: switches, VLAN, router y ACL.
 > No simula el enlace de radio 802.11ac ni el modo monitor del sensor. Por eso la topología se usa como
 > **diseño verificado a nivel lógico**, no como prueba de la capa inalámbrica.
@@ -279,12 +281,34 @@ Si una prueba falla, revisa en este orden: el cable (color verde), la VLAN del p
 
 ## Parte 2. Pendientes de diseño e implementación
 
+### Estado al 15 de noviembre de 2026
+
+Esta tabla manda sobre el texto de cada pendiente más abajo, que se conserva como historial. El plan de construcción con el MCP está en `docs/superpowers/plans/2026-11-15-packet-tracer-mcp.md`.
+
+| # | Estado | Detalle |
+|---|---|---|
+| D1 | **Cerrado** | Topología construida y verificada con el MCP (10 pruebas); `docs/diagramas/topologia-empresa.pkt` y `.png`; registro en `docs/diagramas/pruebas-topologia.md`; figura incluida en el paper |
+| D2, D5 | Pendiente | Sin cambios |
+| D7 | **Cerrado** como supuesto | Decisión del autor (15-nov): los 400 y 200 Mbps quedan declarados en el paper como supuestos de planificación, sin fuente ni medición, y ningún resultado depende de ellos |
+| D6 | Parcial | Verificado que Packet Tracer no permite WPA2 ni PMF (el AP queda abierto); el paper lo declara como supuesto de diseño. Falta, si se quiere, redactar la configuración objetivo en el diseño |
+| D3 | **Cerrado** | Tabla de VLAN e IP en el paper (`tab:vlan`) |
+| D4 | **Cerrado** | La VLAN 30 se implementa; el paper ya no dice «si se implementa» |
+| D8 | **Cerrado** | Criterios confirmados y declarados en el paper como de diseño; registrados en `seguimiento.md` (no en `decisiones.md`, congelado tras `gate-d`) |
+| I1, I2 | **Cerrados** | Replay y mitigación simulada ejecutados con `--final` (commit `545bf2e`); cifras en `resultados.md` §2 |
+| I3 | **Cerrado** | `scripts/figuras_evaluacion.py` y figuras en `docs/figuras/`; el paper incluye las líneas temporales |
+| I4, I5 | **Omitidos** por decisión del autor | Verificar citas y compilar el paper |
+| I6 | **Descartado** por decisión del autor | El anteproyecto (PDF) se deja como está |
+| I7 | **Cerrado** | Solo había un residuo de Caso B en `plan-implementacion-codigo.md:893`, ya corregido |
+| I8 | **Cerrado** | PR #3 fusionado en `main` (`7cb782c`) |
+| I9 | **Cerrado** | El paper está en `docs/paper/paper.tex`, versionado |
+| Nuevo | Hecho | Sección «Discusión» en el paper, trazabilidad en `docs/trazabilidad-paper.md` y README final |
+
 Cada pendiente indica: qué es, por qué importa, cómo cerrarlo y el orden sugerido. Los números son para referirte a ellos.
 
 ### 2.1 Pendientes de diseño
 
 **D1. Figura de topología (Packet Tracer).**
-- *Qué falta:* la figura de la arquitectura en el paper. Hoy no hay ninguna figura.
+- *Qué falta:* la figura de la arquitectura en el paper. Hoy el paper solo tiene la figura de líneas temporales de la evaluación; no hay figura de topología.
 - *Cómo cerrar:* sigue la Parte 1. Luego incluye la imagen en la sección de diseño con `\includegraphics` y una leyenda. Verifica que los nombres de la figura coincidan con los del texto.
 - *Dependencia:* ninguna. Es el primer paso.
 
