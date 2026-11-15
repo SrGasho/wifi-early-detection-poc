@@ -5,7 +5,7 @@ Este documento tiene dos partes:
 1. **Guía paso a paso** para construir en Cisco Packet Tracer la topología del paper (sección de diseño), configurarla y comprobar que las VLAN y la ACL funcionan. Está pensada para quien nunca ha usado el programa.
 2. **Lista de pendientes** de la sección de diseño e implementación del paper, con qué hace falta, cómo cerrarlo y en qué orden.
 
-> **Diferencias entre esta guía y lo construido (15-nov).** La topología se construyó con el MCP y se desvía de la guía en tres puntos: (1) se añadió un router `ISP` con NAT (decisión T5) y una ACL de gestión `ACL-CORP-GESTION` (T6), con dos pruebas más; (2) el `AccessPoint-PT-AC` no admite IP, así que la IP 192.168.20.2 del §1.9 no se pudo configurar, y su puerto se llama `Port 0`, no «Ethernet»; (3) el SSID `EMPRESA` queda abierto, sin WPA2. El detalle y los resultados están en `docs/diagramas/pruebas-topologia.md`.
+> **Diferencias entre esta guía y lo construido (15-nov).** La topología se construyó con el MCP y se desvía de la guía en tres puntos: (1) se añadió un router `ISP` con NAT (decisión T5) y una ACL de gestión `ACL-CORP-GESTION` (T6), con cuatro pruebas más (7 a 10 de `docs/diagramas/pruebas-topologia.md`); (2) el `AccessPoint-PT-AC` no admite IP, así que la IP 192.168.20.2 del §1.9 no se pudo configurar, y su puerto se llama `Port 0`, no «Ethernet»; (3) el SSID `EMPRESA` queda abierto, sin WPA2. El detalle y los resultados están en `docs/diagramas/pruebas-topologia.md`.
 >
 > Nota sobre el alcance. Packet Tracer simula la red a nivel lógico: switches, VLAN, router y ACL.
 > No simula el enlace de radio 802.11ac ni el modo monitor del sensor. Por eso la topología se usa como

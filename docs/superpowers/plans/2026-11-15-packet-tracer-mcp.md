@@ -99,7 +99,7 @@ Descubrimientos que cambian el plan original: el AP-PT **no admite dirección IP
 
 **Cumplido el 15-nov.** (Se conserva el criterio original para trazabilidad.)
 
-- Las 6 pruebas de la sección 1.10 dan el resultado esperado, con la salida de `pt_verify_connectivity` guardada. Si T5 y T6 se aprueban, se suman 2 pruebas más: `PC-INV → ISP` (debe responder) y `PC2 → SERVIDOR` (no debe responder), además de `PC1 → SERVIDOR` (debe responder) que ya está en la guía.
+- Las 6 pruebas de la sección 1.10 dan el resultado esperado, con la salida de `pt_verify_connectivity` guardada. Al aprobarse T5 y T6 se sumaron cuatro pruebas: `PC2 → SERVIDOR` y `PC3 → SENSOR` (sin respuesta), `PC-INV → ISP` (responde) y `PC2 → puerta de enlace` (control); `PC1 → SERVIDOR` ya estaba en la guía.
 - `pt_read_vlans` y `pt_read_acl` coinciden con las tablas de la guía.
 - Existen `docs/diagramas/topologia-empresa.pkt` y `.png`.
 - Se actualizan D1, D3, D4 y D5 en la guía, y el paper recibe la figura (`\includegraphics`) y la tabla de VLAN e IP (D3).

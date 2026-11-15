@@ -35,7 +35,7 @@ Enlaces: cable recto en todos salvo `ISP`–`R-EDGE` (cruzado).
 | 9 | `PC-INV` → 203.0.113.1 (ISP, T5) | responde | **OK**, 4/4 (la primera ejecución dio 3/4 por ARP) |
 | 10 | `PC2` → 192.168.10.1 | responde | **OK**, 4/4 |
 
-Las pruebas 1 a 6 son las de la guía (§1.10); 7 a 9 son las de las decisiones T5 y T6.
+Las pruebas 1 a 6 son las de la guía (§1.10). Las 7 y 8 (T6) y la 9 (T5) son las de las decisiones añadidas. La 10 es un control: comprueba que la ACL de gestión no corta el tráfico normal de la VLAN 10 (`PC2` llega a su propia puerta de enlace).
 
 **Motivo de los descartes, leído de Packet Tracer** (`pt_send_pdu`, modo simulación, `PC2` → `SERVIDOR`): en `R-EDGE`, la ACL `ACL-CORP-GESTION` entrante en `Gi0/0.10` descarta el paquete con la regla `deny ip 192.168.10.0 0.0.0.255 192.168.20.0 0.0.0.255` y el router devuelve «Administratively Prohibited». Para `PC-INV` hacia las VLAN 10 y 20 no se pidió el rastro: la única diferencia con las pruebas que responden (5 y 9) es la regla `deny` de `ACL-INVITADOS`.
 

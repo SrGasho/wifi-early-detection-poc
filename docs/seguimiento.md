@@ -8,14 +8,14 @@ Registra el estado de cada fase, las verificaciones abiertas y los acuerdos. Los
 
 | Fase | Estado | Falta para cerrar |
 |---|---|---|
-| 0. Preparación | Código escrito. 93 pruebas en verde. | — |
+| 0. Preparación | Código escrito. 93 pruebas en verde al cerrar la fase; 114 el 15-nov. | — |
 | 1. Inspección de AWID3 | Cerrada (PR #1, merged a `main`). 12/14 preguntas; P4/P5 indicios. | — |
-| 2. Gate D (partición, episodios, ventanas) | Implementado y verificado (V1/V2/V3). | PR de Gate D. |
+| 2. Gate D (partición, episodios, ventanas) | Cerrada (PR #2, merged a `main`; etiqueta `gate-d`). V1, V2 y V3 verificadas. | — |
 | 3. Entrenamiento (baseline + RF) | Hecho: RF y baseline, ambos sentidos Caso C. | — |
 | 4. Evaluación (ventana + latencia) | Hecho: test final ambos sentidos; resultados en `docs/resultados.md`. | — |
 | 5. Sensibilidad (W=3,10; sin rc) | Hecho (solo validación). F1=1.0 en los tres. | — |
 | 6. Replay y mitigación simulada | Hecho el 15-nov con `--final` (commit `545bf2e`): replay válido y mitigación en los 4 experimentos. Cifras en `docs/resultados.md` §2. | — |
-| 7-8 (revisión, documentación) | Parcial: figuras (I3) y paper actualizados. | Tabla de trazabilidad; README final; anteproyecto (I6). |
+| 7-8 (revisión, documentación) | Hecho: figuras, paper con Discusión, trazabilidad (`docs/trazabilidad-paper.md`), README final y topología verificada en Packet Tracer. | Verificar las citas y compilar el paper (omitidos por decisión del autor hasta compilar en Overleaf). El anteproyecto se descartó. |
 
 ## 2. Hallazgo clave de Gate D: Caso B no viable, se usa Caso C
 
@@ -28,9 +28,9 @@ latencia medible en test.
 ## 3. Pendientes
 
 ### 3.1 Verificaciones con datos
-1. ≥ 99 % de ventanas de ataque de entrenamiento con trama de desconexión (criterio de W=5). Pendiente.
-2. `frac_broadcast_dst_disconn` y `n_unique_*_disconn` por clase (criterio de `loao_exclude`). Pendiente.
-3. Distribución de `iat_disconn_*` por clase tras truncar `ts`. Pendiente.
+1. ≥ 99 % de ventanas de ataque de entrenamiento con trama de desconexión (criterio de W=5). **Hecho** (15-nov): 130 de 130 en deauth→disas y 97 de 97 en disas→deauth (`docs/trazabilidad-paper.md`).
+2. `frac_broadcast_dst_disconn` y `n_unique_*_disconn` por clase (criterio de `loao_exclude`). **Hecho** (V2, solo con entrenamiento): ver `configs/features.yaml` y `docs/decisiones.md`.
+3. Distribución de `iat_disconn_*` por clase tras truncar `ts`. **Sin objeto**: las tres características se retiraron por fuga de imputación (V3).
 4. Tamaños de conjuntos de Caso C. Hecho: deauth→disas = 503/66/600 ventanas.
 
 ### 3.2 Cambios de código y configuración (hechos en la rama `gate-d`)
@@ -40,9 +40,9 @@ latencia medible en test.
 4. `case_c` reescrito (Opción D). Hecho.
 5. Experimentos: valores fijados; `T_method: fixed`; dos de sensibilidad W y uno `no_rc`. Hecho.
 
-### 3.3 Documentos externos (pendientes, fuera de código)
-- Artículo: alcance III-A, nota de `mfpr` en III-B. Texto propuesto en `reporte-gate-d.md`.
-- Anteproyecto: "pronosticar" → "detectar de forma temprana"; "mitigar" → "simular la mitigación".
+### 3.3 Documentos externos
+- Artículo: **hecho** (`docs/paper/paper.tex`, alcance, `mfpr`, Discusión y topología).
+- Anteproyecto (PDF): **descartado** por decisión del autor (15-nov); se deja como está.
 
 ## 4. Acuerdos
 
@@ -55,11 +55,11 @@ latencia medible en test.
 | 15-nov | **B1:** se ejecuta la mitigación simulada (replay y `mitigation_simulator` con `--final`, una vez por experimento). **Ejecutado** tras el commit `545bf2e`: los 4 experimentos con `replay.done` y `mitigation.done`. |
 | 15-nov | **B2:** la VLAN 30 (invitados) se implementa; se quitó "si se implementa" del paper. |
 | 15-nov | **B3:** criterios de aceptación de diseño confirmados: latencia ≤ 2 s, ≤ 1 falsa alerta por hora, F1 por ventana ≥ 0,90. Son del autor, fijados después de ver resultados preliminares; el paper lo declara. Se registran aquí y no en `decisiones.md` porque esa tabla está congelada tras `gate-d`. |
-| 15-nov | **B4:** la rama `docs/correccion-timestamp-y-paper` va a `main` con PR (borrador en `docs/superpowers/pr-correccion-timestamp-y-paper.md`). Lo abre el autor. |
+| 15-nov | **B4:** la rama `docs/correccion-timestamp-y-paper` va a `main` con PR (borrador en `docs/superpowers/pr-correccion-timestamp-y-paper.md`). **Hecho**: PR #3 fusionado el 15-nov (`7cb782c`). |
 | 15-nov | **B5:** `paper.tex` pasó de `docs/Entregas_pasadas/` (ignorado) a `docs/paper/` (versionable). |
-| 15-nov | Omitidos por ahora: verificación de citas (I4) y compilación del paper (I5). Packet Tracer (D1) se hará en otra sesión. |
+| 15-nov | Omitidos por ahora: verificación de citas (I4) y compilación del paper (I5). |
 | 15-nov | MCP de Packet Tracer (`packet-tracer-mcp` 0.12.0, ámbito local) instalado tras revisar su código; extensión `MCP-Control-Center.pts` agregada y corriendo. Plan en `docs/superpowers/plans/2026-11-15-packet-tracer-mcp.md`; T1–T8 aprobadas y ejecutadas el mismo día: topología construida y verificada (10 pruebas), `docs/diagramas/topologia-empresa.pkt`/`.png` y registro en `docs/diagramas/pruebas-topologia.md`; D1 y D3 cerrados en el paper. |
-| 15-nov | **D7:** la capacidad de 400/200 Mbps queda como supuesto de planificación (sin fuente). **I6:** el anteproyecto se deja como está y se ignora. D2, D5 y D6 siguen pendientes. |
+| 15-nov | **D7:** la capacidad de 400/200 Mbps queda como supuesto de planificación (sin fuente). **I6:** el anteproyecto se deja como está y se ignora. |
 | 15-nov | **D2, D5, D6 cerrados.** D2: figura del flujo CRISP-DM generada por script con prueba. D5: canal sensor→servidor definido (JSON por ventana sobre TCP, ~310 bytes; diseño, no implementado). D6: configuración inalámbrica objetivo redactada (WPA2-Personal, PMF opcional; no verificable en Packet Tracer). |
 
 ## 5. Dudas abiertas

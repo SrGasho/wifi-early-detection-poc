@@ -247,7 +247,7 @@ VLAN & Red & Equipos \\
 \label{fig:topologia}
 \end{figure*}
 
-La topología se construyó en Cisco Packet Tracer 9.0.1 y se verificó a nivel lógico (Figura~\ref{fig:topologia} y Tabla~\ref{tab:vlan}) con diez pruebas de conectividad. Los equipos de una misma VLAN y el sensor con el servidor se comunican. Los invitados alcanzan su puerta de enlace y el router de salida, con traducción de direcciones de las tres VLAN, pero no las VLAN 10 ni 20. Solo la estación administrativa de la VLAN 10 alcanza la VLAN 20; los demás equipos de la VLAN 10 no, y Packet Tracer informa que el router descarta el paquete por la regla de la ACL de gestión. Esta verificación no valida la capa inalámbrica: Packet Tracer no simula el enlace 802.11ac ni el modo monitor. Su punto de acceso no admite dirección IP de gestión ni etiquetado 802.1Q y queda abierto, por lo que WPA2 con PMF opcional, el canal 36 y el ancho de 40 MHz siguen siendo supuestos de diseño. El sensor se representa como un equipo cableado, y no se simulan DHCP ni DNS.
+La topología se construyó en Cisco Packet Tracer 9.0.1 y se verificó a nivel lógico (Figura~\ref{fig:topologia} y Tabla~\ref{tab:vlan}) con diez pruebas de conectividad. Los equipos de una misma VLAN y el sensor con el servidor se comunican. Los invitados alcanzan su puerta de enlace y el router de salida, con traducción de direcciones (configurada para las tres VLAN y observada en el tráfico de los invitados), pero no las VLAN 10 ni 20. Solo la estación administrativa de la VLAN 10 alcanza la VLAN 20; los demás equipos de la VLAN 10 no, y Packet Tracer informa que el router descarta el paquete por la regla de la ACL de gestión. Esta verificación no valida la capa inalámbrica: Packet Tracer no simula el enlace 802.11ac ni el modo monitor. Su punto de acceso no admite dirección IP de gestión ni etiquetado 802.1Q y queda abierto, por lo que WPA2 con PMF opcional, el canal 36 y el ancho de 40 MHz siguen siendo supuestos de diseño. El sensor se representa como un equipo cableado, y no se simulan DHCP ni DNS.
 
 El sensor capturará pasivamente el tráfico del aire en modo monitor y reenviará registros o características al servidor. Esta función no puede ser reemplazada por un servidor conectado detrás del router, porque las tramas de gestión no necesariamente atraviesan la red cableada.
 
@@ -261,7 +261,7 @@ La configuración inalámbrica objetivo es la siguiente. El punto de acceso publ
 
 \section{Implementación de la prueba de concepto}
 
-La implementación se realiza en Python con Pandas, NumPy, Scikit-learn y Matplotlib. Los scripts de análisis de la fase de inspección se mantienen fuera del flujo principal, y el código cuenta con pruebas automatizadas (108 en esta versión).
+La implementación se realiza en Python con Pandas, NumPy, Scikit-learn y Matplotlib. Los scripts de análisis de la fase de inspección se mantienen fuera del flujo principal, y el código cuenta con pruebas automatizadas (114 en esta versión).
 
 El flujo implementado y su estado en esta versión son los siguientes:
 
