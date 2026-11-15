@@ -13,7 +13,7 @@ La exportación PNG/PDF para el paper se genera solo después de aprobar la vers
 ## Topología en Cisco Packet Tracer
 
 - `topologia-empresa.pkt`: proyecto de Packet Tracer 9.0.1 (se abre con *File → Open*).
-- `topologia-empresa.png`: figura recortada que usa el paper (`\includegraphics{../diagramas/topologia-empresa.png}`).
+- `topologia-empresa.png`: figura recortada que usa el paper (`\includegraphics{topologia-empresa.png}`; el `.tex` declara dónde buscarlo con `\graphicspath`).
 - `topologia-empresa-captura.png`: captura sin recortar del lienzo.
 - `pruebas-topologia.md`: equipos, direccionamiento, las 10 pruebas de conectividad, configuración de `R-EDGE` y limitaciones.
 

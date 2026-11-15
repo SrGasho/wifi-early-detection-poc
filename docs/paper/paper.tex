@@ -7,6 +7,9 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
+% Las figuras se citan solo por su nombre. Se buscan en la raíz (carpeta plana, p. ej. Overleaf)
+% y en las carpetas del repositorio (docs/diagramas y docs/figuras).
+\graphicspath{{./}{../diagramas/}{../figuras/}{../figuras/loao_deauth_to_disas/figures/}{../figuras/loao_disas_to_deauth/figures/}}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{tabularx}
@@ -91,7 +94,7 @@ El componente analítico se organiza mediante CRISP-DM, mientras que el diseño 
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.85\textwidth]{../figuras/pipeline-crisp-dm.pdf}
+\includegraphics[width=0.85\textwidth]{pipeline-crisp-dm.pdf}
 \caption{Flujo de trabajo según CRISP-DM y módulos de cada fase. El módulo \texttt{experiment} registra cada ejecución y bloquea la repetición de la prueba final.}
 \label{fig:pipeline}
 \end{figure*}
@@ -222,24 +225,24 @@ El AP operará en 5 GHz bajo IEEE 802.11ac, con un canal de referencia 36 y un a
 El AP y el router se conectarán al switch mediante enlaces troncales 802.1Q que transportarán las VLAN 10, 20 y 30. El sensor y el servidor se conectarán mediante puertos de acceso en la VLAN 20. El router funcionará mediante un esquema \textit{router-on-a-stick}, realizará el enrutamiento inter-VLAN y aplicará las ACL. La VLAN 30 tendrá únicamente salida a Internet y no podrá acceder a las VLAN 10 ni 20. El acceso a la VLAN 20 se restringirá a comunicaciones administrativas autorizadas. Una lista de control de acceso sin estado, como la que se verifica a nivel lógico en la topología de referencia, no distingue las respuestas de conexiones iniciadas desde la red corporativa; el diseño real debe permitir únicamente respuestas de conexiones establecidas o usar un cortafuegos con estado.
 
 \begin{table}[htbp]
-\caption{Plan de VLAN y direccionamiento de la topología de referencia.}
+\caption{Plan de VLAN y direccionamiento de la topología de referencia. La puerta de enlace es la dirección \texttt{.1} de cada red.}
 \label{tab:vlan}
 \centering
 \footnotesize
-\begin{tabular}{clll}
+\begin{tabularx}{\columnwidth}{llY}
 \hline
-VLAN & Nombre & Red y puerta de enlace & Equipos \\
+VLAN & Red & Equipos \\
 \hline
-10 & Corporativa & \texttt{192.168.10.0/24}, \texttt{.1} & 3 PC (\texttt{.10}--\texttt{.12}) \\
-20 & Gestión & \texttt{192.168.20.0/24}, \texttt{.1} & Servidor (\texttt{.20}), sensor (\texttt{.10}) \\
-30 & Invitados & \texttt{192.168.30.0/24}, \texttt{.1} & PC de invitados (\texttt{.10}) \\
+10 Corporativa & \texttt{192.168.10.0/24} & 3 PC (\texttt{.10}--\texttt{.12}) \\
+20 Gestión & \texttt{192.168.20.0/24} & Servidor (\texttt{.20}), sensor (\texttt{.10}) \\
+30 Invitados & \texttt{192.168.30.0/24} & PC (\texttt{.10}) \\
 \hline
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{../diagramas/topologia-empresa.png}
+\includegraphics[width=0.92\textwidth]{topologia-empresa.png}
 \caption{Topología de referencia construida y verificada a nivel lógico en Cisco Packet Tracer 9.0.1. El router \texttt{ISP} representa Internet con la red \texttt{203.0.113.0/24}, reservada para documentación. La captura pasiva del sensor y la seguridad inalámbrica no se simulan.}
 \label{fig:topologia}
 \end{figure*}
@@ -348,8 +351,8 @@ La latencia de 0,26 s y de 1,48 s se obtiene de un único episodio por sentido. 
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.48\textwidth]{../figuras/loao_deauth_to_disas/figures/timeline_cap_b_test.png}\hfill
-\includegraphics[width=0.48\textwidth]{../figuras/loao_disas_to_deauth/figures/timeline_cap_a_test.png}
+\includegraphics[width=0.48\textwidth]{timeline_cap_b_test.png}\hfill
+\includegraphics[width=0.48\textwidth]{timeline_cap_a_test.png}
 \caption{Puntuación del Random Forest por ventana en la captura de prueba; a la izquierda, deauth$\rightarrow$disas (captura de disociación) y a la derecha, disas$\rightarrow$deauth (captura de desautenticación). La franja roja marca el episodio de ataque de referencia. El tiempo es relativo a la primera ventana evaluada, no al inicio de la captura.}
 \label{fig:lineas}
 \end{figure*}
