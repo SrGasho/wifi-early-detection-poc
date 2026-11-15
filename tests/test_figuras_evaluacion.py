@@ -51,6 +51,14 @@ def test_relativize_shifts_each_capture_to_start_at_zero():
     assert ev["t_end"].tolist() == [1000.0, 1010.0, 5000.0]  # la entrada no se modifica
 
 
+def test_relativize_origin_includes_episode_that_starts_before_first_window():
+    ev = pd.DataFrame({"capture_id": ["a", "a"], "t_end": [1005.0, 1010.0]})
+    eps = pd.DataFrame({"capture_id": ["a"], "t_start": [1000.0], "t_end": [1008.0]})
+    ev2, eps2 = F.relativize(ev, eps)
+    assert eps2["t_start"].tolist() == [0.0]  # nunca negativo
+    assert ev2["t_end"].tolist() == [5.0, 10.0]
+
+
 def test_relativize_drops_episodes_of_captures_without_windows():
     ev = pd.DataFrame({"capture_id": ["a", "a"], "t_end": [1000.0, 1010.0]})
     eps = pd.DataFrame({"capture_id": ["a", "z"], "t_start": [1004.0, 9.0], "t_end": [1008.0, 10.0]})
@@ -114,3 +122,14 @@ def test_main_exits_with_clear_message_when_experiment_has_no_index(tmp_path, mo
     with pytest.raises(SystemExit) as exc:
         F.main(["--exp", "demo.yaml", "--split", "test", "--out", str(tmp_path / "figs")])
     assert "demo" in str(exc.value)
+
+
+def test_run_record_never_stores_absolute_local_paths(tmp_path):
+    from src import config as C
+
+    inside = {"name": "demo", "seed": 1, "_path": str(C.ROOT / "configs" / "experiments" / "exp_demo.yaml")}
+    outside = {"name": "demo", "seed": 1, "_path": str(tmp_path / "otro" / "exp_demo.yaml")}
+    a = F.record_figures_run(inside, "x", "val", {}, tmp_path / "a", "t0")
+    b = F.record_figures_run(outside, "x", "val", {}, tmp_path / "b", "t0")
+    assert json.loads(a.read_text(encoding="utf-8"))["config_file"] == "configs/experiments/exp_demo.yaml"
+    assert json.loads(b.read_text(encoding="utf-8"))["config_file"] == "exp_demo.yaml"

@@ -6,8 +6,8 @@ registrada (``final/evaluate.done``). Cada ejecución deja ``run_figuras_<split>
 figuras, con commit, semilla, entorno y hash de los archivos leídos (R10).
 
 Las figuras salen en ``--out`` (por defecto ``docs/figuras/<experimento>``). El tiempo de las líneas
-temporales es relativo al primer ``t_end`` de cada captura, es decir, 0 s es el cierre de la primera
-ventana y no el inicio de la captura.
+temporales es relativo al instante más temprano mostrado de cada captura (el primer ``t_end`` o el inicio
+de un episodio, si es anterior); 0 s no es el inicio de la captura.
 
 Uso::
 
@@ -39,10 +39,12 @@ def relativize(ev: pd.DataFrame, episodes: pd.DataFrame) -> tuple[pd.DataFrame, 
 
     Los episodios de capturas sin ventanas evaluadas se descartan: no hay nada que dibujar y no tienen origen.
     """
-    t0 = ev.groupby("capture_id")["t_end"].min()
-    ev, episodes = ev.copy(), episodes.copy()
+    first_window = ev.groupby("capture_id")["t_end"].min()
+    episodes = episodes[episodes["capture_id"].isin(first_window.index)].copy()
+    first_episode = episodes.groupby("capture_id")["t_start"].min()
+    t0 = pd.concat([first_window, first_episode], axis=1).min(axis=1)
+    ev = ev.copy()
     ev["t_end"] = ev["t_end"] - ev["capture_id"].map(t0)
-    episodes = episodes[episodes["capture_id"].isin(t0.index)].copy()
     off = episodes["capture_id"].map(t0)
     episodes["t_start"] = episodes["t_start"] - off
     episodes["t_end"] = episodes["t_end"] - off
@@ -56,10 +58,8 @@ def _source_files(results_dir: Path, split: str) -> list[Path]:
             _require(results_dir / f"metrics_episode_{split}.json")]
 
 
-def build_figures(results_dir: Path, split: str, out_dir: Path) -> list[Path]:
-    """Escribe las figuras en ``out_dir/figures`` y devuelve sus rutas. No modifica ``results_dir``."""
-    results_dir, out_dir = Path(results_dir), Path(out_dir)
-    windows_file, episodes_file = _source_files(results_dir, split)
+def _render(sources: list[Path], split: str, out_dir: Path) -> list[Path]:
+    windows_file, episodes_file = sources
     ev = pd.read_parquet(windows_file)
     metrics = json.loads(episodes_file.read_text(encoding="utf-8"))
     episodes = pd.DataFrame(metrics["episodes"], columns=["episode_id", "capture_id", "t_start", "t_end"])
@@ -70,14 +70,33 @@ def build_figures(results_dir: Path, split: str, out_dir: Path) -> list[Path]:
     return sorted((out_dir / "figures").glob(f"*_{split}.png"))
 
 
-def record_figures_run(cfg: dict, exp_id: str, split: str, sources: list[Path], out_dir: Path,
+def build_figures(results_dir: Path, split: str, out_dir: Path) -> list[Path]:
+    """Escribe las figuras en ``out_dir/figures`` y devuelve sus rutas. No modifica ``results_dir``."""
+    return _render(_source_files(Path(results_dir), split), split, Path(out_dir))
+
+
+def _repo_relative(path: str | None) -> str | None:
+    """Ruta relativa a la raíz del repo (con '/'); si está fuera de ella, solo el nombre del archivo.
+
+    El registro se versiona: no debe llevar rutas absolutas ni el usuario del equipo.
+    """
+    if not path:
+        return None
+    p = Path(path)
+    try:
+        return p.resolve().relative_to(C.ROOT.resolve()).as_posix()
+    except ValueError:
+        return p.name
+
+
+def record_figures_run(cfg: dict, exp_id: str, split: str, sources: dict[str, str], out_dir: Path,
                        started_at: str) -> Path:
     """R10: deja ``run_figuras_<split>.json`` junto a las figuras (no dentro de ``results/``)."""
     payload = {
         "exp_id": exp_id, "stage": "figuras", "split": split,
         "started_at": started_at, "finished_at": E.now_iso(),
-        "seed": cfg.get("seed"), "config_file": cfg.get("_path"),
-        "source_sha256": {p.name: E.sha256_file(p) for p in sources},
+        "seed": cfg.get("seed"), "config_file": _repo_relative(cfg.get("_path")),
+        "source_sha256": sources,
         **E.git_info(), **E.environment_info(),
     }
     return E.write_json(out_dir / f"run_figuras_{split}.json", payload)
@@ -95,10 +114,12 @@ def main(argv: list[str] | None = None) -> None:
     try:
         exp_id = E.resolve_exp_id(cfg)  # solo lee el índice; no aplica guardas de ejecución final
         results_dir = C.output_root(cfg, "results") / exp_id
-        paths = build_figures(results_dir, args.split, out)
+        sources = _source_files(results_dir, args.split)
+        hashes = {p.name: E.sha256_file(p) for p in sources}  # antes de leer: ata el registro a lo leído
+        paths = _render(sources, args.split, out)
     except (FileNotFoundError, E.FinalRunError) as exc:
         raise SystemExit(f"error ({cfg['name']}): {exc}") from None
-    record_figures_run(cfg, exp_id, args.split, _source_files(results_dir, args.split), out, started)
+    record_figures_run(cfg, exp_id, args.split, hashes, out, started)
     for p in paths:
         print(p)
 
