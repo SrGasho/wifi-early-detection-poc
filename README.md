@@ -13,17 +13,32 @@ Prueba de concepto para la **detección temprana de ataques de desautenticación
 
 El plan completo, con reglas, contratos de datos y fases, está en [`plan-implementacion-codigo.md`](plan-implementacion-codigo.md).
 
+## Estado del proyecto
+
+Las fases 0 a 6 están ejecutadas. El estado detallado y los acuerdos están en [`docs/seguimiento.md`](docs/seguimiento.md); lo que sigue pendiente (diseño de red en Packet Tracer, anteproyecto) está en [`docs/guia-packet-tracer-y-pendientes.md`](docs/guia-packet-tracer-y-pendientes.md).
+
+Resultados en prueba, con la partición principal **Caso C** (leave-one-attack-out, ambos sentidos), `W = 5 s`, `S = 1 s`:
+
+| Modelo | Sentido | F1 ventana | Latencia | Falsas alertas/h | Tiempo por ventana (media) |
+|---|---|---|---|---|---|
+| Random Forest | deauth→disas | 0,9973 | 0,262 s | 0 | 7,4 ms |
+| Random Forest | disas→deauth | 0,9972 | 1,483 s | 0 | 6,9 ms |
+| Línea base (umbral `n_disconn`) | deauth→disas | 1,0000 | 0,262 s | 0 | 3,4 ms |
+| Línea base (umbral `n_disconn`) | disas→deauth | 0,9972 | 1,483 s | 0 | 2,5 ms |
+
+El Random Forest **no supera** a la línea base: en AWID3 el ataque es una ráfaga densa y una sola característica ya separa las clases. Cada cifra, con su archivo de evidencia, está en [`docs/trazabilidad-paper.md`](docs/trazabilidad-paper.md); el análisis completo y las limitaciones, en [`docs/resultados.md`](docs/resultados.md). Los tiempos se midieron en un equipo de desarrollo, con un solo proceso y una captura por sentido; no son hardware de sensor.
+
 ## Instalación
 
 El desarrollo parte de cero sobre un equipo con **16 GB de RAM** y aproximadamente **500 GB de espacio disponible**. El procesamiento se hace por bloques y por captura; el proyecto no pretende ocupar todo el disco.
 
-Antes de instalar, comprobar la versión del equipo:
+Las versiones fijadas en `requirements.txt` se verificaron con **Python 3.13** (las pruebas pasan con 108 casos). Comprobar la versión del equipo:
 
 ```bash
-python3 --version
+python --version
 ```
 
-Luego crear el entorno:
+Crear el entorno. En Linux o macOS:
 
 ```bash
 python3 -m venv .venv
@@ -32,11 +47,13 @@ pip install -r requirements.txt
 pytest -q
 ```
 
+En Windows (PowerShell), activar con `.venv\Scripts\Activate.ps1` en lugar de `source`; o llamar directamente a `.venv\Scripts\python.exe -m pytest -q`.
+
 Si `pip` no encuentra alguna versión exacta para la versión de Python instalada, instala las ocho librerías compatibles, corre `pytest -q` y regenera `requirements.txt` con `pip freeze` filtrado a esas librerías. Registra la versión final en `run_*.json`.
 
 ## Datos
 
-La primera versión usará **AWID3 en CSV**. El flujo principal no depende de PCAP. PCAP y `tshark` solo se usarán como contingencia si el CSV no contiene un campo indispensable y el archivo está disponible.
+El flujo usa **AWID3 en CSV**. No depende de PCAP. PCAP y `tshark` solo se usarían como contingencia si el CSV no contuviera un campo indispensable y el archivo estuviera disponible.
 
 Ver [`data/README.md`](data/README.md). En resumen: copiar las capturas CSV de desautenticación y disociación de AWID3 en `data/raw/`, y definir la sal de anonimización:
 
@@ -78,10 +95,31 @@ python -m src.replay --exp configs/experiments/exp_loao_deauth_to_disas.yaml --s
 python -m src.mitigation_simulator --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split test --final
 ```
 
-Repetir las fases 2 a 6 con el sentido inverso (`exp_loao_disas_to_deauth.yaml`) y su línea base
-(`exp_baseline_disas_to_deauth.yaml`). Los experimentos de sensibilidad (`role: sensitivity`:
+Repetir las fases 2 a 6 con el sentido inverso (`exp_loao_disas_to_deauth.yaml`) y con las dos líneas base
+(`exp_baseline_deauth_to_disas.yaml`, `exp_baseline_disas_to_deauth.yaml`; ellas usan `src.baseline` en
+lugar de `src.train`). Cada etapa `--final` se ejecuta **una sola vez por experimento** y exige el árbol git
+limpio; una segunda ejecución se rechaza. Los experimentos de sensibilidad (`role: sensitivity`:
 `exp_rf_sens_W3.yaml`, `exp_rf_sens_W10.yaml`, `exp_loao_deauth_to_disas_no_rc.yaml`) solo llegan hasta
 la validación. El Caso B se descartó (geometría de AWID3); ver `docs/reporte-gate-d.md` 2.1.
+
+### Figuras de evaluación sin repetir la prueba
+
+Para generar las figuras (curva PR y línea temporal) a partir de resultados **ya guardados**, sin tocar
+`--final` (R6):
+
+```bash
+python -m scripts.figuras_evaluacion --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split test
+```
+
+Las figuras salen en `docs/figuras/<experimento>/figures/`, junto con `run_figuras_<split>.json` (commit,
+semilla, entorno y hash de los archivos leídos). El script solo lee `results/`; para `test` exige que la
+evaluación final esté registrada (`final/evaluate.done`).
+
+### Pruebas
+
+```bash
+pytest -q          # 108 pruebas sobre datos sintéticos en formato interno; deben quedar en verde
+```
 
 ## Diseño de red
 
@@ -91,13 +129,19 @@ La topología se entrega como diseño de referencia, no como una simulación fun
 
 ```text
 configs/    configuración de datos, características, particiones y experimentos
-docs/       arquitectura, modelo de amenazas, respuestas sobre AWID3, protocolo y decisiones
+docs/       arquitectura, modelo de amenazas, respuestas sobre AWID3, protocolo, decisiones,
+            resultados y trazabilidad
+docs/paper/     artículo (LaTeX, versionado)
+docs/figuras/   figuras de evaluación generadas desde resultados guardados
 data/       datos (no se suben)
 src/        código; un módulo por etapa
+scripts/    análisis de apoyo (Fase 1) y figuras de evaluación (solo lectura)
 tests/      pruebas sobre datos sintéticos en formato interno
 models/     modelos entrenados (no se suben)
 results/    resultados por experimento (no se suben salvo resúmenes)
 ```
+
+Los PDF de entregas anteriores están en `docs/Entregas_pasadas/` y no se versionan.
 
 ## Reproducibilidad
 

@@ -890,7 +890,7 @@ Comando: `pytest -q`. Se corre antes de cada commit a `main`.
 |---|---|---|
 | AWID3 no cabe en memoria | errores de memoria o lectura lenta | bajar `chunksize`, procesar una captura a la vez, usar `--max-rows` para explorar |
 | Falta un campo (`wlan.seq`, señal, `mfpc`) | ausente en la Fase 1 | quitar la característica y registrarlo como limitación; `tshark` solo si hay pcap |
-| Un solo episodio por ataque | ráfaga continua en la Fase 1 | Caso B para clasificación y Caso C para latencia; latencia descriptiva |
+| Un solo episodio por ataque | ráfaga continua en la Fase 1 | Caso C (Opción D): la prueba conserva el inicio del ataque; latencia descriptiva (valor individual) |
 | Un conjunto queda sin un tipo de ataque | `class_presence` | se acepta; métricas de ese tipo "no disponibles" |
 | Un conjunto queda sin ataques o sin normales | `split_data` lo rechaza | rediseñar cortes antes de Gate D; nunca sintetizar ataques |
 | La línea base iguala o supera a Random Forest | métricas de validación | se reporta tal cual; el aporte es la evaluación de latencia y falsas alertas |

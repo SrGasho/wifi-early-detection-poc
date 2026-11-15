@@ -22,6 +22,23 @@ final se registró con `git_commit = 6a49bb4`, `git_dirty = False` (ver `reporte
 se etiquetará `gate-d` es ese mismo; entre el commit del run y el tag no hay cambios en `src/` ni `configs/`
 (solo docs/scripts/tests), así que la correspondencia código↔resultado se mantiene.
 
+## 2. Reproducción temporal y mitigación simulada (Fase 6, prueba final)
+
+Ejecutada el 2026-11-15 con `--final`, una vez por experimento, con `git_commit = 545bf2e` y `git_dirty = False` (de `run_replay_test.json`). Cifras de `replay_test.json`, modo `--speed max`, un solo proceso en el equipo de desarrollo (no es hardware de sensor).
+
+| Modelo | Sentido | Ventanas | Tramas | Tiempo por ventana: media / p95 / máx | Tasa de entrada | Tasa procesada |
+|---|---|---|---|---|---|---|
+| Random Forest | deauth→disas | 600 | 2 013 716 | 7,41 / 11,55 / 44,40 ms | 3 334 tramas/s | 452 607 tramas/s |
+| Random Forest | disas→deauth | 599 | 1 626 469 | 6,94 / 10,93 / 57,15 ms | 2 697 tramas/s | 391 287 tramas/s |
+| Línea base | deauth→disas | 600 | 2 013 716 | 3,37 / 6,99 / 15,79 ms | 3 334 tramas/s | 994 151 tramas/s |
+| Línea base | disas→deauth | 599 | 1 626 469 | 2,46 / 5,05 / 12,84 ms | 2 697 tramas/s | 1 101 720 tramas/s |
+
+- **Código ↔ resultado:** entre `6a49bb4` (evaluación final) y `545bf2e` (replay) el único cambio en `src/` y `configs/` es la docstring de `case_c` (`8c06c14`, solo comentario; verificado con `git diff 6a49bb4 545bf2e -- src configs`). Ningún cambio de lógica ni de configuración.
+- **Consistencia con el lote:** `consistency_with_batch.valid = true` en los cuatro, con 0 diferencias de decisión y diferencia máxima de puntuación 0,0.
+- **Qué mide el tiempo:** registro → característica → predicción por ventana cerrada. No es tiempo de reconexión ni eficacia de mitigación.
+- **Mitigación simulada:** en los cuatro, 1 alerta → 1 notificación (0 absorbidas por enfriamiento), `tipo_de_evento = ataque_de_desconexion`, ninguna acción de `aislar/bloquear/desautenticar/expulsar`, y cambio de canal y localización por RSSI marcados `solo_diseno`.
+- **Límite:** una sola captura por sentido, un solo episodio y una sola alerta; el flujo se ejercita pero no se estresa. Las tasas dependen del equipo.
+
 ## 3. Por qué estas cifras (evidencia de separabilidad)
 
 **Distribución de `n_disconn` en prueba (deauth→disas, test = cap_b):**

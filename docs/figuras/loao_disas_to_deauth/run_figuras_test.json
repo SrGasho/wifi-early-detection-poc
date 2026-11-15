@@ -1,0 +1,28 @@
+{
+  "exp_id": "20261110-2232-loao_disas_to_deauth",
+  "stage": "figuras",
+  "split": "test",
+  "started_at": "2026-11-15T20:26:37+00:00",
+  "finished_at": "2026-11-15T20:26:38+00:00",
+  "seed": 42,
+  "config_file": "configs/experiments/exp_loao_disas_to_deauth.yaml",
+  "source_sha256": {
+    "eval_windows_test.parquet": "d6c170aed709882330b209dbcc7f50a576ee4de850298eb8bdb5fa2f8720ee60",
+    "metrics_episode_test.json": "1a338b3b462a0931ae61332c11e1a10bacb17b49517b9446612f5e19387b9345"
+  },
+  "git_commit": "12741ef8ebbe5e3a850accee9fec4c46a74caf61",
+  "git_dirty": false,
+  "python_version": "3.13.14",
+  "platform": "Windows 11 AMD64",
+  "library_versions": {
+    "pandas": "3.1.0",
+    "numpy": "2.4.6",
+    "scikit-learn": "1.9.1",
+    "matplotlib": "3.11.2",
+    "pyarrow": "26.0.0",
+    "PyYAML": "6.0.3",
+    "pytest": "9.1.1",
+    "joblib": "1.6.0"
+  },
+  "requirements_sha256": "3d1d464906421c320bfc74c214fcaaef4ae5d9f2178af9c6c4704ac66fcebbb2"
+}
