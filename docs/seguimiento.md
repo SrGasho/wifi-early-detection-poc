@@ -8,7 +8,7 @@ Registra el estado de cada fase, las verificaciones abiertas y los acuerdos. Los
 
 | Fase | Estado | Falta para cerrar |
 |---|---|---|
-| 0. Preparación | Código escrito. 93 pruebas en verde al cerrar la fase; 114 el 15-nov. | — |
+| 0. Preparación | Código escrito. 93 pruebas en verde al cerrar la fase; 115 el 15-nov. | — |
 | 1. Inspección de AWID3 | Cerrada (PR #1, merged a `main`). 12/14 preguntas; P4/P5 indicios. | — |
 | 2. Gate D (partición, episodios, ventanas) | Cerrada (PR #2, merged a `main`; etiqueta `gate-d`). V1, V2 y V3 verificadas. | — |
 | 3. Entrenamiento (baseline + RF) | Hecho: RF y baseline, ambos sentidos Caso C. | — |

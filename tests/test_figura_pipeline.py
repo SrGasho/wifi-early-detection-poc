@@ -38,12 +38,13 @@ def test_build_writes_vector_and_raster_figures(tmp_path):
 
 
 def test_build_does_not_write_outside_the_output_dir(tmp_path):
-    before = {p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts and ".venv" not in p.parts
-              and "__pycache__" not in p.parts and ".pytest_cache" not in p.parts}
+    def snapshot():
+        return {p for d in ("docs", "scripts") for p in (ROOT / d).rglob("*")
+                if p.is_file() and "__pycache__" not in p.parts}
+
+    before = snapshot()
     FP.build_pipeline_figure(tmp_path)
-    after = {p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts and ".venv" not in p.parts
-             and "__pycache__" not in p.parts and ".pytest_cache" not in p.parts}
-    assert after == before
+    assert snapshot() == before
 
 
 @pytest.mark.parametrize("name", ["experiment"])

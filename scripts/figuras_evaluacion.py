@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import tempfile
 import warnings
 from pathlib import Path
 
@@ -66,10 +68,17 @@ def _render(sources: list[Path], split: str, out_dir: Path) -> list[Path]:
     if ev["y"].nunique() < 2:
         warnings.warn(f"El conjunto {split} tiene una sola clase: no se genera la curva PR.", UserWarning)
     ev, episodes = relativize(ev, episodes)
-    for old in (out_dir / "figures").glob(f"*_{split}.png"):  # no dejar figuras de ejecuciones anteriores
-        old.unlink()
-    save_figures(ev, episodes, out_dir, split)
-    return sorted((out_dir / "figures").glob(f"*_{split}.png"))
+    fig_dir = out_dir / "figures"
+    with tempfile.TemporaryDirectory() as tmp:
+        # Se renderiza aparte: si algo falla, las figuras previas siguen intactas.
+        save_figures(ev, episodes, Path(tmp), split)
+        fresh = sorted((Path(tmp) / "figures").glob(f"*_{split}.png"))
+        fig_dir.mkdir(parents=True, exist_ok=True)
+        for old in fig_dir.glob(f"*_{split}.png"):  # no dejar figuras de ejecuciones anteriores
+            old.unlink()
+        for png in fresh:
+            shutil.copy2(png, fig_dir / png.name)
+    return sorted(fig_dir.glob(f"*_{split}.png"))
 
 
 def build_figures(results_dir: Path, split: str, out_dir: Path) -> list[Path]:

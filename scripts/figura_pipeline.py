@@ -19,19 +19,18 @@ from pathlib import Path
 @dataclass(frozen=True)
 class Phase:
     name: str                      # nombre completo de la fase CRISP-DM
-    label: str                     # nombre con saltos de línea para la figura
     modules: tuple[str, ...] = ()
     note: str = ""                 # texto libre cuando la fase no tiene módulo
 
 
 PHASES: tuple[Phase, ...] = (
-    Phase("Comprensión del negocio", "Comprensión\ndel negocio", note="Requisitos\ny alcance"),
-    Phase("Comprensión de datos", "Comprensión\nde datos", ("inspect_data", "analisis_fase1")),
-    Phase("Preparación", "Preparación",
+    Phase("Comprensión del negocio", note="Requisitos\ny alcance"),
+    Phase("Comprensión de datos", ("inspect_data", "analisis_fase1")),
+    Phase("Preparación",
           ("preprocessing", "data_loader", "episodes", "feature_engineering")),
-    Phase("Modelado", "Modelado", ("split_data", "baseline", "train")),
-    Phase("Evaluación", "Evaluación", ("predict", "alerts", "evaluate", "figuras_evaluacion")),
-    Phase("Despliegue", "Despliegue", ("replay", "mitigation_simulator")),
+    Phase("Modelado", ("split_data", "baseline", "train")),
+    Phase("Evaluación", ("predict", "alerts", "evaluate", "figuras_evaluacion")),
+    Phase("Despliegue", ("replay", "mitigation_simulator")),
 )
 
 CROSS_CUTTING: tuple[str, ...] = ("experiment",)
