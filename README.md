@@ -32,7 +32,7 @@ El Random Forest **no supera** a la línea base: en AWID3 el ataque es una ráfa
 
 El desarrollo parte de cero sobre un equipo con **16 GB de RAM** y aproximadamente **500 GB de espacio disponible**. El procesamiento se hace por bloques y por captura; el proyecto no pretende ocupar todo el disco.
 
-Las versiones fijadas en `requirements.txt` se verificaron con **Python 3.13** (las pruebas pasan con 97 casos). Comprobar la versión del equipo:
+Las versiones fijadas en `requirements.txt` se verificaron con **Python 3.13** (las pruebas pasan con 102 casos). Comprobar la versión del equipo:
 
 ```bash
 python --version
@@ -111,12 +111,14 @@ Para generar las figuras (curva PR y línea temporal) a partir de resultados **y
 python -m scripts.figuras_evaluacion --exp configs/experiments/exp_loao_deauth_to_disas.yaml --split test
 ```
 
-Las figuras salen en `docs/figuras/<experimento>/figures/`. El script solo lee `results/`.
+Las figuras salen en `docs/figuras/<experimento>/figures/`, junto con `run_figuras_<split>.json` (commit,
+semilla, entorno y hash de los archivos leídos). El script solo lee `results/`; para `test` exige que la
+evaluación final esté registrada (`final/evaluate.done`).
 
 ### Pruebas
 
 ```bash
-pytest -q          # 97 pruebas sobre datos sintéticos en formato interno; deben quedar en verde
+pytest -q          # 102 pruebas sobre datos sintéticos en formato interno; deben quedar en verde
 ```
 
 ## Diseño de red

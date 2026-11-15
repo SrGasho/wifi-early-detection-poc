@@ -127,6 +127,8 @@ def case_c(split_cfg: dict, targets: dict, extents: dict, exploratory: pd.DataFr
     - val: franja que empieza val_fraction veces la duración del ataque antes de su inicio y termina
       en el cuantil val_fraction de sus tramas más 1 s, recortada a la captura y a la purga. Cruza la
       frontera normal->ataque, así que contiene tráfico normal (antes) y de ataque (después).
+      Si ese cuantil queda antes del inicio de la franja, el final pasa a ser el inicio más
+      max(val_fraction * duración del ataque, 1 s), también recortado a la captura y a la purga.
     - train: el RESTO de la captura de entrenamiento, en DOS unidades con purga alrededor de val:
       [inicio, val_lo - purge] (normal temprano) y [val_hi + purge, fin] (ataque tardío). Agregadas,
       train tiene ambas clases.

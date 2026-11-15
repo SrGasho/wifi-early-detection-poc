@@ -86,7 +86,7 @@
 
 | Task | Estado | Evidencia |
 |---|---|---|
-| A1 figuras de solo lectura | **Hecho** | `scripts/figuras_evaluacion.py` + 4 pruebas; `pytest -q` = 97 verdes; figuras en `docs/figuras/loao_*/figures/`; `results/` sin cambios (hash antes/después) y `final/` sin `.done` nuevos. Eje de tiempo relativo a 0 s por captura. |
+| A1 figuras de solo lectura | **Hecho** | `scripts/figuras_evaluacion.py` + 9 pruebas; `pytest -q` = 102 verdes (tras la revisión del PR #3); figuras en `docs/figuras/loao_*/figures/`; `results/` sin cambios (hash antes/después) y `final/` sin `.done` nuevos. Eje de tiempo relativo a 0 s por captura. |
 | A2 residuo de Caso B | **Hecho** | `plan-implementacion-codigo.md:893` |
 | A3 trazabilidad paper→evidencia | Pendiente | — |
 | C1 replay en validación | **Hecho** (adelantado: no usa prueba) | los 4 experimentos: `consistency_with_batch.valid = true`, 0 diferencias, `max_abs_score_difference = 0.0`. RF: ≈ 8,7 ms por ventana de extremo a extremo (media, validación). Línea base: ≈ 3,8–4,2 ms. |
