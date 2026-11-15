@@ -118,13 +118,13 @@ Campo interno & Columna AWID3 & Uso \\
 \path{seq} & \path{wlan.seq} & Entrada para \path{seq_jump_max} \\
 \path{signal_dbm} & \path{radiotap.dbm_antsignal} & Entrada para \path{signal_std_disconn} \\
 \path{protected} & \path{wlan.fc.protected} & Entrada para \path{frac_protected_mgmt} \\
-\path{mfpc} & \path{wlan.rsn.capabilities.mfpc} & No usado (casi nulo) \\
+\path{mfpc} & \path{wlan.rsn.capabilities.mfpc} & No es característica del modelo (casi nulo); la mitigación simulada lo usa en las tramas de (re)asociación \\
 \path{label} & \path{Label} & Etiqueta de referencia: Deauth, Disas o Normal \\
 \hline
 \end{tabularx}
 \end{table*}
 
-Los campos de protección tienen cobertura desigual. El campo \texttt{wlan.rsn.capabilities.mfpc} existe, pero solo tiene valor en menos del 0,5 \% de las tramas. El campo \texttt{mfpr} no está presente en el CSV, así que la compatibilidad con PMF se trata como desconocida. En la muestra revisada, las capturas corresponden a 5 GHz, canal 36 (5180 MHz), y no se observó diversidad de canal.
+Los campos de protección tienen cobertura desigual. El campo \texttt{wlan.rsn.capabilities.mfpc} existe, pero solo tiene valor en menos del 0,5 \% de las tramas. Ese valor aparece en las tramas de (re)asociación, no en el resto, y es el que usa la mitigación simulada. El campo \texttt{mfpr} no está presente en el CSV, así que la exigencia de PMF por parte del punto de acceso no se puede conocer y un cliente sin observación previa se trata como de compatibilidad desconocida. En la muestra revisada, las capturas corresponden a 5 GHz, canal 36 (5180 MHz), y no se observó diversidad de canal.
 
 Las desconexiones de gestión etiquetadas como normales son muy pocas: 72 en \texttt{cap\_a} (69 de subtipo 10 y 3 de subtipo 12) y 51 en \texttt{cap\_b} (45 y 6). Las tramas con los mismos números de subtipo pero de tipo control o datos no son desautenticaciones. Esta distinción es la que permite definir la desconexión a partir de \texttt{fc\_type} y \texttt{fc\_subtype} juntos.
 
@@ -136,7 +136,7 @@ Los registros se convierten a un formato interno con marca temporal, captura, ti
 
 El código de motivo se almacena como entero de 32 bits. Un entero de 16 bits con signo llega solo hasta 32 767, mientras que AWID3 contiene códigos de hasta 65 535; al convertirlos a 16 bits los valores fuera de rango se corrompen sin aviso.
 
-Se usan ventanas deslizantes de duración $W = 5$ s y paso $S = 1$ s, con $k=1$: una ventana es de ataque si contiene al menos una trama etiquetada del evento. La resolución del dato es de 1 s, así que un paso menor no añade precisión real. La verificación con datos de entrenamiento confirma que el 100 \% de las ventanas de ataque contienen al menos una trama de desconexión de gestión, lo que respalda la duración elegida.
+Se usan ventanas deslizantes de duración $W = 5$ s y paso $S = 1$ s, con $k=1$: una ventana es de ataque si contiene al menos una trama etiquetada del evento. La resolución del dato es de 1 s, así que un paso menor no añade precisión real. La verificación con datos de entrenamiento confirma que el 100 \% de las ventanas de ataque contienen al menos una trama de desconexión de gestión (130 de 130 en deauth$\rightarrow$disas y 97 de 97 en disas$\rightarrow$deauth), lo que respalda la duración elegida.
 
 Las características de cada ventana se seleccionan con una lista permitida. Esa lista incluye el número de tramas totales, de gestión y de datos, su razón, el número de desconexiones y su tasa, la variación entre ventanas, la fracción de tramas de gestión protegidas, los conteos por código de motivo (\texttt{rc\_7}, \texttt{rc\_1} y \texttt{rc\_other}), la mayor diferencia de secuencia entre tramas de una misma fuente y la desviación de la señal de las desconexiones. El perfil que usan los experimentos principales de caso C es un subconjunto de esa lista: excluye los conteos por subtipo, \texttt{rc\_7} y \texttt{rc\_1}, las fuentes y destinos únicos de las desconexiones y la fracción de difusión. Quedan 11 características: número de tramas totales, de gestión y de datos, razón entre datos y gestión, número de desconexiones, su tasa y su variación entre ventanas, fracción de gestión protegida, \texttt{rc\_other}, la mayor diferencia de secuencia y la desviación de la señal. El conjunto se fijó antes de la evaluación final.
 
@@ -173,7 +173,7 @@ Un episodio es una ráfaga de tramas objetivo separada de otra por un silencio s
 
 La partición tradicional de tres vías no es viable con esta geometría. Con cortes por cuantil de las tramas de ataque, los conjuntos de validación y prueba quedan formados solo por ataque, sin ventanas normales, y la partición se rechaza. Por eso se usa \textit{leave-one-attack-out} (caso C) como partición principal, en ambos sentidos: se entrena y valida con la captura de un ataque y se prueba con la captura completa del otro.
 
-La validación de cada sentido se ubica sobre la frontera entre el tráfico normal y el ataque, de modo que contenga ambos tipos de tramas. Como hay una sola frontera por captura, el entrenamiento se divide en dos unidades: el tráfico normal inicial y el tramo final del ataque, ambos separados de la validación por una purga de 10 s. La purga es igual a la mayor ventana de sensibilidad, según la regla de que la purga sea al menos $W$. La captura de prueba se usa completa, incluido su inicio. Esto hace que la latencia sea medible en prueba. Para el sentido deauth$\rightarrow$disas, el entrenamiento tiene 503 ventanas, la validación 66 y la prueba 600, y los tres contienen ventanas normales y de ataque. La validación va desde 36 s antes del inicio del ataque hasta 35 s después, y el entrenamiento queda a ambos lados con purga de 10 s (Tabla~\ref{tab:parametros}).
+La validación de cada sentido se ubica sobre la frontera entre el tráfico normal y el ataque, de modo que contenga ambos tipos de tramas. Como hay una sola frontera por captura, el entrenamiento se divide en dos unidades: el tráfico normal inicial y el tramo final del ataque, ambos separados de la validación por una purga de 10 s. La purga es igual a la mayor ventana de sensibilidad, según la regla de que la purga sea al menos $W$. La captura de prueba se usa completa, incluido su inicio. Esto hace que la latencia sea medible en prueba. Para el sentido deauth$\rightarrow$disas, el entrenamiento tiene 503 ventanas, la validación 66 y la prueba 600; para disas$\rightarrow$deauth, 465, 105 y 599. En ambos sentidos los tres conjuntos contienen ventanas normales y de ataque. La validación empieza 36 s antes del inicio del ataque y termina 35 s después en deauth$\rightarrow$disas y 74 s después en disas$\rightarrow$deauth, porque el ataque de disociación dura más y la franja se calcula como fracción de la duración del ataque; el entrenamiento queda a ambos lados con purga de 10 s (Tabla~\ref{tab:parametros}).
 
 \subsection{Modelado}
 
@@ -194,7 +194,7 @@ Tipo de ventana $k$ & 1 (de ataque si contiene una trama de ataque) \\
 Separación de episodios $T$ & 2 s, fijo \\
 Unión de alertas \path{max_gap} & 1 s \\
 Purga & 10 s a cada lado de cada corte \\
-Validación (caso C) & 36 s antes del inicio del ataque hasta 35 s después \\
+Validación (caso C) & Desde 36 s antes del inicio del ataque hasta 35 s después (deauth$\rightarrow$disas) o 74 s después (disas$\rightarrow$deauth) \\
 Umbral & Máximo F1 por ventana en validación; en empate, el menor \\
 Línea base & Alerta si \path{n_disconn} $\geq \theta$ \\
 Random Forest & 12 combinaciones: \path{n_estimators} $\in \{100, 300\}$, \path{max_depth} $\in \{\text{sin límite}, 10, 20\}$ y \path{min_samples_leaf} $\in \{1, 5\}$; pesos de clase equilibrados \\
@@ -214,15 +214,40 @@ El AP operará en 5 GHz bajo IEEE 802.11ac, con un canal de referencia 36 y un a
 
 El AP y el router se conectarán al switch mediante enlaces troncales 802.1Q que transportarán las VLAN 10, 20 y 30. El sensor y el servidor se conectarán mediante puertos de acceso en la VLAN 20. El router funcionará mediante un esquema \textit{router-on-a-stick}, realizará el enrutamiento inter-VLAN y aplicará las ACL. La VLAN 30 tendrá únicamente salida a Internet y no podrá acceder a las VLAN 10 ni 20. El acceso a la VLAN 20 se restringirá a comunicaciones administrativas autorizadas. Una lista de control de acceso sin estado, como la que se verifica a nivel lógico en la topología de referencia, no distingue las respuestas de conexiones iniciadas desde la red corporativa; el diseño real debe permitir únicamente respuestas de conexiones establecidas o usar un cortafuegos con estado.
 
+\begin{table}[htbp]
+\caption{Plan de VLAN y direccionamiento de la topología de referencia.}
+\label{tab:vlan}
+\centering
+\footnotesize
+\begin{tabular}{clll}
+\hline
+VLAN & Nombre & Red y puerta de enlace & Equipos \\
+\hline
+10 & Corporativa & \texttt{192.168.10.0/24}, \texttt{.1} & 3 PC (\texttt{.10}--\texttt{.12}) \\
+20 & Gestión & \texttt{192.168.20.0/24}, \texttt{.1} & Servidor (\texttt{.20}), sensor (\texttt{.10}) \\
+30 & Invitados & \texttt{192.168.30.0/24}, \texttt{.1} & PC de invitados (\texttt{.10}) \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{../diagramas/topologia-empresa.png}
+\caption{Topología de referencia construida y verificada a nivel lógico en Cisco Packet Tracer 9.0.1. El router \texttt{ISP} representa Internet con la red \texttt{203.0.113.0/24}, reservada para documentación. La captura pasiva del sensor y la seguridad inalámbrica no se simulan.}
+\label{fig:topologia}
+\end{figure*}
+
+La topología se construyó en Cisco Packet Tracer 9.0.1 y se verificó a nivel lógico (Figura~\ref{fig:topologia} y Tabla~\ref{tab:vlan}) con diez pruebas de conectividad. Los equipos de una misma VLAN y el sensor con el servidor se comunican. Los invitados alcanzan su puerta de enlace y el router de salida, con traducción de direcciones de las tres VLAN, pero no las VLAN 10 ni 20. Solo la estación administrativa de la VLAN 10 alcanza la VLAN 20; los demás equipos de la VLAN 10 no, y Packet Tracer informa que el router descarta el paquete por la regla de la ACL de gestión. Esta verificación no valida la capa inalámbrica: Packet Tracer no simula el enlace 802.11ac ni el modo monitor. Su punto de acceso no admite dirección IP de gestión ni etiquetado 802.1Q y queda abierto, por lo que WPA2 con PMF opcional, el canal 36 y el ancho de 40 MHz siguen siendo supuestos de diseño. El sensor se representa como un equipo cableado, y no se simulan DHCP ni DNS.
+
 El sensor capturará pasivamente el tráfico del aire en modo monitor y reenviará registros o características al servidor. Esta función no puede ser reemplazada por un servidor conectado detrás del router, porque las tramas de gestión no necesariamente atraviesan la red cableada.
 
-Como estimación de diseño, un AP 802.11ac 2x2 en 40 MHz puede ofrecer cerca de 400 Mbps de tasa física en condiciones favorables. Considerando una eficiencia útil aproximada del 50 \%, se utilizan 200 Mbps como capacidad agregada de referencia, equivalente a unos 20 Mbps por usuario con 10 usuarios activos. Esta cifra es una estimación de planificación y no una medición física.
+Como estimación de diseño, un AP 802.11ac 2x2 en 40 MHz puede ofrecer cerca de 400 Mbps de tasa física en condiciones favorables. Considerando una eficiencia útil aproximada del 50 \%, se utilizan 200 Mbps como capacidad agregada de referencia, equivalente a unos 20 Mbps por usuario con 10 usuarios activos. Estas cifras son supuestos de planificación: no se apoyan en una fuente bibliográfica ni en una medición física, y ningún resultado de este trabajo depende de ellas.
 
 La seguridad de referencia considera WPA2-Personal con PMF opcional o coexistencia de clientes heredados. La evolución futura considera WPA3-Personal con PMF requerido. PMF y la migración a IEEE 802.11ax se tratan como decisiones independientes.
 
 \section{Implementación de la prueba de concepto}
 
-La implementación se realiza en Python con Pandas, NumPy, Scikit-learn y Matplotlib. Los scripts de análisis de la fase de inspección se mantienen fuera del flujo principal, y el código cuenta con pruebas automatizadas (93 en la versión final).
+La implementación se realiza en Python con Pandas, NumPy, Scikit-learn y Matplotlib. Los scripts de análisis de la fase de inspección se mantienen fuera del flujo principal, y el código cuenta con pruebas automatizadas (108 en esta versión).
 
 El flujo implementado y su estado en esta versión son los siguientes:
 
@@ -237,8 +262,9 @@ El flujo implementado y su estado en esta versión son los siguientes:
     \item Entrenamiento y almacenamiento del Random Forest. \textit{Implementado.}
     \item Predicción sobre datos reservados. \textit{Implementado.}
     \item Generación de alertas estructuradas. \textit{Implementado.}
-    \item Reproducción temporal para medir la latencia de procesamiento. \textit{Pendiente.} La latencia reportada es la de los datos, no la de un proceso en tiempo real.
-    \item Ejecución de la mitigación simulada. \textit{Pendiente.}
+    \item Reproducción temporal para medir el tiempo de procesamiento y verificar que coincide con el cálculo en lote. \textit{Implementado y ejecutado sobre la prueba final.} La latencia de detección reportada sigue siendo la de los datos; el tiempo de procesamiento se informa aparte.
+    \item Ejecución de la mitigación simulada. \textit{Implementado y ejecutado sobre la prueba final;} solo escribe registros.
+    \item Figuras de evaluación a partir de resultados ya guardados. \textit{Implementado;} el \textit{script} solo lee, no repite la prueba.
 \end{enumerate}
 
 \begin{table*}[t]
@@ -256,13 +282,14 @@ Preparación & \path{preprocessing}, \path{data_loader} & Formato interno, tipos
 Preparación & \path{episodes}, \path{feature_engineering} & Episodios, rejilla de ventanas y características \\
 Modelado & \path{split_data}, \path{baseline}, \path{train} & Partición congelada, línea base y Random Forest \\
 Evaluación & \path{predict}, \path{alerts}, \path{evaluate} & Puntuaciones, alertas, métricas y latencia temporal \\
-Despliegue & \path{replay}, \path{mitigation_simulator} & Pendientes; no ejecutados en esta versión \\
+Evaluación & \path{figuras_evaluacion} & Figuras desde resultados guardados; solo lectura \\
+Despliegue & \path{replay}, \path{mitigation_simulator} & Reproducción temporal verificada contra el lote y mitigación simulada; ejecutados sobre la prueba final \\
 Transversal & \path{experiment} & Registro de ejecuciones y guardas de R6 y R10 \\
 \hline
 \end{tabularx}
 \end{table*}
 
-Entorno y reproducibilidad. El código se ejecuta con Python 3.13 y las versiones fijadas en \texttt{requirements.txt} (pandas 3.1.0, NumPy 2.4.6, scikit-learn 1.9.1 y pyarrow 26.0.0, entre otras). Cada experimento guarda su configuración, su semilla, el commit del código y el estado del árbol de trabajo. Los resultados de este documento corresponden al commit \texttt{6a49bb4}, marcado con la etiqueta \texttt{gate-d}. Los comandos para regenerar cada salida están en \texttt{README.md}.
+Entorno y reproducibilidad. El código se ejecuta con Python 3.13 y las versiones fijadas en \texttt{requirements.txt} (pandas 3.1.0, NumPy 2.4.6, scikit-learn 1.9.1 y pyarrow 26.0.0, entre otras). Cada experimento guarda su configuración, su semilla, el commit del código y el estado del árbol de trabajo. Los resultados de detección y de latencia corresponden al commit \texttt{6a49bb4}, marcado con la etiqueta \texttt{gate-d}; la reproducción temporal y la mitigación simulada se ejecutaron sobre el commit \texttt{545bf2e}, cuyo único cambio en código y configuración respecto de \texttt{6a49bb4} es un comentario de documentación. Los comandos para regenerar cada salida están en \texttt{README.md}.
 
 Cada ejecución de prueba queda registrada con el commit del código, el estado del árbol de trabajo y un marcador que impide repetirla. La partición congelada guarda su propio commit.
 
@@ -282,7 +309,7 @@ En la ejecución final, las decisiones de ajuste se tomaron solo con los conjunt
 
 \section{Resultados}
 
-La Tabla~\ref{tab:resultados} resume el rendimiento en prueba. En el sentido deauth$\rightarrow$disas, el modelo se entrena y valida con la captura de desautenticación y se prueba con la captura de disociación; el sentido inverso es simétrico. Todas las cifras provienen de los registros de la ejecución final, que quedó atada al commit \texttt{6a49bb4}.
+La Tabla~\ref{tab:resultados} resume el rendimiento en prueba. En el sentido deauth$\rightarrow$disas, el modelo se entrena y valida con la captura de desautenticación y se prueba con la captura de disociación; el sentido inverso es simétrico. Las cifras de detección y latencia provienen de los registros de la ejecución final, atada al commit \texttt{6a49bb4}; las de reproducción temporal, de la ejecución sobre el commit \texttt{545bf2e}.
 
 \begin{table*}[htbp]
 \caption{Resultados en prueba con partición de caso C. En cada sentido se entrena y valida con una captura y se prueba con la otra completa. Precisión igual a 1,000 en las cuatro filas. FA/h: falsas alertas por hora de tráfico normal.}
@@ -304,17 +331,55 @@ En el sentido deauth$\rightarrow$disas, el Random Forest detecta 185 de las 186 
 
 En la prueba de deauth$\rightarrow$disas, la ventana de ataque con menos desconexiones tiene 82 tramas, mientras que la ventana normal con más tiene 1; en ese sentido, el conteo de desconexiones por sí solo separa las clases observadas. La importancia por permutación del Random Forest en validación es cero para todas las características. Este resultado no demuestra que varias características separen por sí solas: puede deberse a redundancia, a la saturación de la métrica o al procedimiento de cálculo, y requeriría un análisis de ablación para interpretarse. La conclusión respaldada por la comparación es que, en este conjunto, el Random Forest no aporta una mejora medible frente a la regla de umbral sobre \texttt{n\_disconn}.
 
-El análisis de sensibilidad se hizo solo en validación. Con ventanas de 3 s, 5 s y 10 s, el F1 es 1,000 en los tres casos. También es 1,000 el modelo sin códigos de motivo, lo que indica que la detección no depende de \texttt{rc\_7}, el código más asociado al ataque. Estas cifras se basan en 66 ventanas de validación, así que solo indican robustez de forma preliminar.
+El análisis de sensibilidad se hizo solo en validación. Con ventanas de 3 s, 5 s y 10 s, el F1 es 1,000 en los tres casos. También es 1,000 el modelo sin códigos de motivo, lo que indica que la detección no depende de \texttt{rc\_7}, el código más asociado al ataque. Estas cifras se basan en 66 ventanas de validación en el modelo principal y en el modelo sin códigos de motivo, 68 con $W=3$ s y 61 con $W=10$ s, y solo en el sentido deauth$\rightarrow$disas, así que solo indican robustez de forma preliminar.
 
 La latencia de 0,26 s y de 1,48 s se obtiene de un único episodio por sentido. No es posible estimar media, dispersión ni intervalo de confianza.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.48\textwidth]{../figuras/loao_deauth_to_disas/figures/timeline_cap_b_test.png}\hfill
+\includegraphics[width=0.48\textwidth]{../figuras/loao_disas_to_deauth/figures/timeline_cap_a_test.png}
+\caption{Puntuación del Random Forest por ventana en la captura de prueba; a la izquierda, deauth$\rightarrow$disas (captura de disociación) y a la derecha, disas$\rightarrow$deauth (captura de desautenticación). La franja roja marca el episodio de ataque de referencia. El tiempo es relativo a la primera ventana evaluada, no al inicio de la captura.}
+\label{fig:lineas}
+\end{figure*}
+
 La reproducción temporal de la captura de prueba, ejecutada con \texttt{--final} sobre el commit \texttt{545bf2e}, coincide con el procesamiento en lote en los cuatro experimentos: 0 diferencias de decisión y diferencia máxima de puntuación 0,0. Con el Random Forest, el tiempo medio por ventana es de 7,4 ms en deauth$\rightarrow$disas (percentil 95: 11,6 ms; máximo: 44,4 ms) y de 6,9 ms en disas$\rightarrow$deauth (percentil 95: 10,9 ms; máximo: 57,2 ms); con la línea base es de 3,4 ms y 2,5 ms. La tasa de entrada de las capturas es de 3\,334 y 2\,697 tramas por segundo, y la reproducción procesa 452\,607 y 391\,287 tramas por segundo con el Random Forest. Estas cifras se midieron en el equipo de desarrollo y en un solo proceso, no en el hardware del sensor, y por ello indican un margen de procesamiento pero no lo garantizan en otro equipo. La mitigación simulada produjo una notificación por cada alerta en los cuatro experimentos, sin ninguna acción de aislamiento.
+
+\section{Discusión}
+
+\subsection{La separación la produce la forma de los datos}
+
+Con la partición de caso C, ambos modelos detectan el episodio y no producen falsas alertas, con F1 de 0,997 a 1,000 (Tabla~\ref{tab:resultados} y Figura~\ref{fig:lineas}). Este resultado describe a AWID3 más que al problema en general. El ataque es una ráfaga: en deauth$\rightarrow$disas las ventanas de ataque tienen entre 82 y 12\,016 desconexiones de gestión por ventana de 5 s, mientras que el tráfico normal casi no contiene desconexiones de gestión (51 y 72 en toda la captura). En prueba, la ventana normal con más desconexiones tiene 1 en deauth$\rightarrow$disas y 3 en disas$\rightarrow$deauth, y la de ataque con menos tiene 82 y 48. Con esa separación una sola característica basta, y el Random Forest no mejora de forma medible a un umbral sobre \texttt{n\_disconn}: la diferencia es una ventana en un sentido y ninguna en el otro.
+
+\subsection{Qué determina la latencia}
+
+Las latencias de 0,26 s y 1,48 s no indican un detector más rápido en un sentido. Son efecto del paso de la rejilla y del umbral. El análisis de las ventanas fallidas se hizo después de la evaluación final, con fines descriptivos, y no modificó ningún parámetro ni selección. En disas$\rightarrow$deauth ambos modelos pierden la primera ventana de ataque: la línea base tiene un umbral de 122 desconexiones y esa ventana tiene 48, y el Random Forest le asigna una puntuación de 0,91 frente a un umbral de 0,93. La primera alerta llega con la ventana siguiente, 1 s después (el paso $S$), cuando el conteo ya es de 228. En deauth$\rightarrow$disas la primera ventana ya supera el umbral (122 frente a 48) y la alerta es inmediata.
+
+Los dos umbrales de la línea base, 48 y 122, coinciden con el menor conteo de ataque de la validación correspondiente. Es lo esperable con una validación pequeña y perfectamente separable, y ilustra por qué la elección del umbral es frágil. El criterio de 2 s se cumple en ambos sentidos, pero en disas$\rightarrow$deauth con poco margen: una ventana perdida más daría una latencia de 2,48 s. La latencia crece en múltiplos de $S$, de modo que reducirla exige un paso menor, que la resolución de 1 s de los datos no permite aprovechar.
+
+\subsection{Frente a los criterios de aceptación}
+
+El F1 por ventana (0,997 a 1,000) supera el valor de 0,90 y la latencia cumple los 2 s. El criterio de una falsa alerta por hora no se puede comprobar con estos datos: no se observó ninguna falsa alerta, pero solo se evaluaron unas 0,12 h de tráfico normal en cada sentido. Si las falsas alertas siguen un proceso de Poisson, con cero eventos el límite superior de la tasa al 95~\% de confianza es de cerca de $3/0{,}12 \approx 25$ por hora. Los datos no refutan el criterio, pero tampoco lo demuestran. Como los criterios se fijaron después de ver resultados preliminares, esta comparación no constituye una validación independiente.
+
+\subsection{Modelo simple frente a modelo supervisado}
+
+En estos datos la regla de umbral iguala o supera al Random Forest, es auditable y tarda menos por ventana (3,4 y 2,5 ms frente a 7,4 y 6,9 ms). Esto no implica que el modelo supervisado sea innecesario en una red real. El tráfico legítimo de gestión en una oficina puede incluir desconexiones más variadas, por ejemplo por itinerancia o por equipos que se reinician, que en AWID3 casi no aparecen, y un umbral sobre un solo conteo podría producir allí más falsas alertas. Con estas capturas no es posible decidir entre ambos enfoques; la comparación solo muestra que el Random Forest no aporta una ventaja cuando la separación es tan marcada. La robustez frente al ancho de ventana y a la ausencia de los códigos de motivo, observada solo en validación, apunta en la misma dirección, con la cautela de que se basa en pocas ventanas.
+
+\subsection{Costo de procesamiento y mitigación simulada}
+
+El tiempo medio de 7,4 y 6,9 ms por ventana con el Random Forest, con un máximo de 57,2 ms, es una fracción pequeña del paso de 1 s, y la reproducción procesa unas 136 y 145 veces las tramas por segundo que llegan en las capturas. Es un margen holgado en el equipo de desarrollo, pero no está medido en un sensor real, que además tendría que capturar y decodificar las tramas, tarea que esta medición no incluye.
+
+La mitigación simulada comprueba el flujo de alerta, notificación y registro, no su eficacia. En los cuatro experimentos los diez clientes observados antes de la alerta declaran compatibilidad con PMF, así que no se ejercitó la rama de clientes no compatibles ni la de compatibilidad desconocida. Además, la puntuación de la línea base es un conteo de desconexiones y no una probabilidad, por lo que la regla de prioridad alta (puntuación de al menos 0,9) se cumple siempre con esa línea base y solo es informativa con el Random Forest.
+
+\subsection{Alcance de las conclusiones}
+
+Los resultados respaldan que, en AWID3 y con ventanas de 5 s, las ráfagas de desautenticación y disociación se detectan sin falsas alertas y con una latencia menor que 2 s, y que lo hace igual un umbral simple. No respaldan que el modelo generalice a otros ataques, a otras redes o a tráfico legítimo más ruidoso, ni que el criterio de falsas alertas se cumpla. Heredan además la salvedad de la ejecución descartada descrita en las limitaciones. Para reducir estas incertidumbres harían falta más episodios y capturas, tráfico normal con desconexiones legítimas, más tipos de ataque, una validación mayor para fijar el umbral y mediciones sobre un sensor real.
 
 \section{Limitaciones}
 
 La prueba de concepto no se validó sobre una red física. AWID3 no representa exactamente el escenario de la pequeña empresa, y sus condiciones de autenticación, protección, equipos, banda y canal son diferentes. En las capturas usadas hay una sola banda y un solo canal, así que no se puede evaluar el efecto de la diversidad de canal.
 
-Cada tipo de ataque aparece como un único episodio por captura. La latencia es descriptiva y no permite una comparación estadística. Un conjunto de validación con 66 ventanas hace inestable la elección del umbral, y las conclusiones de sensibilidad son preliminares.
+Cada tipo de ataque aparece como un único episodio por captura. La latencia es descriptiva y no permite una comparación estadística. Un conjunto de validación con 66 ventanas (105 en el sentido inverso) hace inestable la elección del umbral, y las conclusiones de sensibilidad son preliminares.
 
 La partición principal es de tipo \textit{leave-one-attack-out}, que mide transferencia entre desautenticación y disociación, dos ataques relacionados. No demuestra generalización frente a ataques de otra naturaleza.
 
@@ -334,7 +399,7 @@ Este trabajo define una prueba de concepto para la detección temprana de evento
 
 En AWID3, con partición de caso C, la detección es casi perfecta en ambos sentidos, con latencias de 0,26 s y 1,48 s medidas desde la marca temporal del primer evento de ataque. El Random Forest no supera a un umbral sobre el número de desconexiones. Como la separación entre clases la produce casi por completo un conteo de desconexiones, la comparación entre modelos aporta poca información en este dataset. Esto debe interpretarse junto con las limitaciones, sobre todo la validación pequeña, el único episodio por captura y la diferencia con una red real.
 
-La validación sobre hardware físico y la adopción de WPA3 con PMF requerido quedan fuera de esta prueba de concepto. La medición del procesamiento en el hardware del sensor y con tráfico en vivo queda como trabajo futuro.
+En la reproducción temporal, el procesamiento de una ventana tardó unos 7 ms en promedio con el Random Forest, muy por debajo del paso de 1 s, y la mitigación simulada registró el flujo de decisión sin acciones contra equipos. La validación sobre hardware físico y la adopción de WPA3 con PMF requerido quedan fuera de esta prueba de concepto. La medición del procesamiento en el hardware del sensor y con tráfico en vivo queda como trabajo futuro.
 
 \begin{thebibliography}{00}
 
