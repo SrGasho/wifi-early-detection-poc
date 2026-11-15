@@ -20,7 +20,7 @@ Commits del 2026-11-15:
 
 ## Verificación
 
-- `.venv/Scripts/python.exe -m pytest -q` → 102 pruebas en verde.
+- `.venv/Scripts/python.exe -m pytest -q` → 108 pruebas en verde.
 - Ningún cambio en `src/`, `configs/` ni `data/raw/`.
 - `replay.done` y `mitigation.done` creados una sola vez por experimento (R6).
 

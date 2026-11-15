@@ -66,6 +66,8 @@ def _render(sources: list[Path], split: str, out_dir: Path) -> list[Path]:
     if ev["y"].nunique() < 2:
         warnings.warn(f"El conjunto {split} tiene una sola clase: no se genera la curva PR.", UserWarning)
     ev, episodes = relativize(ev, episodes)
+    for old in (out_dir / "figures").glob(f"*_{split}.png"):  # no dejar figuras de ejecuciones anteriores
+        old.unlink()
     save_figures(ev, episodes, out_dir, split)
     return sorted((out_dir / "figures").glob(f"*_{split}.png"))
 
@@ -90,14 +92,18 @@ def _repo_relative(path: str | None) -> str | None:
 
 
 def record_figures_run(cfg: dict, exp_id: str, split: str, sources: dict[str, str], out_dir: Path,
-                       started_at: str) -> Path:
-    """R10: deja ``run_figuras_<split>.json`` junto a las figuras (no dentro de ``results/``)."""
+                       started_at: str, git: dict | None = None) -> Path:
+    """R10: deja ``run_figuras_<split>.json`` junto a las figuras (no dentro de ``results/``).
+
+    ``git`` es el estado del repositorio capturado ANTES de escribir las figuras; si no se pasa, se
+    consulta ahora (las figuras ya escritas pueden marcar el árbol como modificado).
+    """
     payload = {
         "exp_id": exp_id, "stage": "figuras", "split": split,
         "started_at": started_at, "finished_at": E.now_iso(),
         "seed": cfg.get("seed"), "config_file": _repo_relative(cfg.get("_path")),
         "source_sha256": sources,
-        **E.git_info(), **E.environment_info(),
+        **(git if git is not None else E.git_info()), **E.environment_info(),
     }
     return E.write_json(out_dir / f"run_figuras_{split}.json", payload)
 
@@ -109,6 +115,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--out", default=None, help="Carpeta base de salida (por defecto docs/figuras/<nombre>)")
     args = ap.parse_args(argv)
     started = E.now_iso()
+    git = E.git_info()  # antes de escribir nada: describe el código que se ejecuta, no su salida
     cfg = C.load_experiment(args.exp)
     out = Path(args.out) if args.out else Path("docs/figuras") / cfg["name"]
     try:
@@ -119,7 +126,7 @@ def main(argv: list[str] | None = None) -> None:
         paths = _render(sources, args.split, out)
     except (FileNotFoundError, E.FinalRunError) as exc:
         raise SystemExit(f"error ({cfg['name']}): {exc}") from None
-    record_figures_run(cfg, exp_id, args.split, hashes, out, started)
+    record_figures_run(cfg, exp_id, args.split, hashes, out, started, git)
     for p in paths:
         print(p)
 

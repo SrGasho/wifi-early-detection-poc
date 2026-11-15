@@ -133,3 +133,53 @@ def test_run_record_never_stores_absolute_local_paths(tmp_path):
     b = F.record_figures_run(outside, "x", "val", {}, tmp_path / "b", "t0")
     assert json.loads(a.read_text(encoding="utf-8"))["config_file"] == "configs/experiments/exp_demo.yaml"
     assert json.loads(b.read_text(encoding="utf-8"))["config_file"] == "exp_demo.yaml"
+
+
+def test_stale_figures_of_the_same_split_are_removed(tmp_path):
+    res = _make_results(tmp_path / "results", split="val")
+    out = tmp_path / "figs"
+    first = {p.name for p in F.build_figures(res, "val", out)}
+    assert "pr_val.png" in first
+    ev = pd.read_parquet(res / "eval_windows_val.parquet")
+    ev["y"] = 0
+    ev.to_parquet(res / "eval_windows_val.parquet", index=False)
+    with pytest.warns(UserWarning):
+        second = {p.name for p in F.build_figures(res, "val", out)}
+    assert second == {"timeline_cap_b_val.png"} and not (out / "figures" / "pr_val.png").exists()
+
+
+def test_relativize_handles_captures_without_episodes():
+    ev = pd.DataFrame({"capture_id": ["a", "a"], "t_end": [1000.0, 1010.0]})
+    eps = pd.DataFrame(columns=["capture_id", "t_start", "t_end"], dtype=float)
+    ev2, eps2 = F.relativize(ev, eps)
+    assert ev2["t_end"].tolist() == [0.0, 10.0] and eps2.empty
+
+
+def test_main_val_split_does_not_require_final_marker(tmp_path, monkeypatch):
+    root = tmp_path / "results"
+    res = _make_results(root, split="val")
+    (root / "_index").mkdir()
+    (root / "_index" / "demo.json").write_text(json.dumps({"exp_id": res.name}), encoding="utf-8")
+    monkeypatch.setattr(F.C, "load_experiment", lambda path: _cfg(root))
+    out = tmp_path / "figs"
+    F.main(["--exp", "demo.yaml", "--split", "val", "--out", str(out)])
+    assert (out / "figures" / "timeline_cap_b_val.png").exists() and (out / "run_figuras_val.json").exists()
+
+
+def test_git_state_is_captured_before_figures_are_written(tmp_path, monkeypatch):
+    root = tmp_path / "results"
+    res = _make_results(root)
+    (root / "_index").mkdir()
+    (root / "_index" / "demo.json").write_text(json.dumps({"exp_id": res.name}), encoding="utf-8")
+    monkeypatch.setattr(F.C, "load_experiment", lambda path: _cfg(root))
+    out = tmp_path / "figs"
+    seen = []
+
+    def fake_git_info():
+        seen.append((out / "figures").exists())
+        return {"git_commit": "abc", "git_dirty": False}
+
+    monkeypatch.setattr(F.E, "git_info", fake_git_info)
+    F.main(["--exp", "demo.yaml", "--split", "test", "--out", str(out)])
+    assert seen == [False]  # se consultó antes de crear las figuras
+    assert json.loads((out / "run_figuras_test.json").read_text(encoding="utf-8"))["git_commit"] == "abc"
