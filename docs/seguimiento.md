@@ -14,7 +14,8 @@ Registra el estado de cada fase, las verificaciones abiertas y los acuerdos. Los
 | 3. Entrenamiento (baseline + RF) | Hecho: RF y baseline, ambos sentidos Caso C. | — |
 | 4. Evaluación (ventana + latencia) | Hecho: test final ambos sentidos; resultados en `docs/resultados.md`. | — |
 | 5. Sensibilidad (W=3,10; sin rc) | Hecho (solo validación). F1=1.0 en los tres. | — |
-| 6-8 (replay, mitigación) | No iniciadas. | Ver plan. |
+| 6. Replay y mitigación simulada | Hecho el 15-nov con `--final` (commit `545bf2e`): replay válido y mitigación en los 4 experimentos. Cifras en `docs/resultados.md` §2. | — |
+| 7-8 (revisión, documentación) | Parcial: figuras (I3) y paper actualizados. | Tabla de trazabilidad; README final; anteproyecto (I6). |
 
 ## 2. Hallazgo clave de Gate D: Caso B no viable, se usa Caso C
 
@@ -51,7 +52,7 @@ latencia medible en test.
 | 10-nov | Caso B descartado como partición principal; Caso C (Opción D) adoptado. |
 | 10-nov | Truncado de `ts` solo en `iat_*`. |
 | 10-nov | Trazabilidad: cada decisión de diseño documenta las alternativas consideradas (petición del autor). |
-| 15-nov | **B1:** se ejecuta la mitigación simulada (replay y `mitigation_simulator` con `--final`, una vez por experimento). Bloqueado hasta que el autor haga commit (la guarda exige árbol limpio). |
+| 15-nov | **B1:** se ejecuta la mitigación simulada (replay y `mitigation_simulator` con `--final`, una vez por experimento). **Ejecutado** tras el commit `545bf2e`: los 4 experimentos con `replay.done` y `mitigation.done`. |
 | 15-nov | **B2:** la VLAN 30 (invitados) se implementa; se quitó "si se implementa" del paper. |
 | 15-nov | **B3:** criterios de aceptación de diseño confirmados: latencia ≤ 2 s, ≤ 1 falsa alerta por hora, F1 por ventana ≥ 0,90. Son del autor, fijados después de ver resultados preliminares; el paper lo declara. Se registran aquí y no en `decisiones.md` porque esa tabla está congelada tras `gate-d`. |
 | 15-nov | **B4:** la rama `docs/correccion-timestamp-y-paper` va a `main` con PR (borrador en `docs/superpowers/pr-correccion-timestamp-y-paper.md`). Lo abre el autor. |

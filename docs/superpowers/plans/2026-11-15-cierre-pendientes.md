@@ -96,8 +96,8 @@
 | B4 PR | Borrador listo | `docs/superpowers/pr-correccion-timestamp-y-paper.md`; lo abre el autor |
 | B5 paper versionado | **Hecho** | `docs/paper/paper.tex` (no ignorado). No hizo falta tocar `.gitignore`. |
 | I4, I5 | **Omitidos por decisión del autor** | — |
-| C2 `--final` replay + mitigación | **Esperando commit del autor** | la guarda exige árbol git limpio |
-| C3 paper/anteproyecto tras C2 | Pendiente de C2 | — |
+| C2 `--final` replay + mitigación | **Hecho** (commit `545bf2e`, árbol limpio) | 4 experimentos: `replay.done` y `mitigation.done`; `valid = true`; 0 acciones prohibidas. Cifras en `docs/resultados.md` §2. |
+| C3 paper tras C2 | **Hecho** (paper); anteproyecto pendiente | `paper.tex`: resumen, §Implementación, §Protocolo, §Resultados, Limitaciones y Conclusiones. El anteproyecto es PDF: no se edita desde aquí (I6). |
 
 ## Carril C — Condicionado a B1 = (a)
 
