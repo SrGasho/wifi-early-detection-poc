@@ -15,7 +15,7 @@ El plan completo, con reglas, contratos de datos y fases, está en [`plan-implem
 
 ## Estado del proyecto
 
-Las fases 0 a 6 están ejecutadas. El estado detallado y los acuerdos están en [`docs/seguimiento.md`](docs/seguimiento.md); lo que sigue pendiente (diseño de red en Packet Tracer, anteproyecto) está en [`docs/guia-packet-tracer-y-pendientes.md`](docs/guia-packet-tracer-y-pendientes.md).
+Las fases 0 a 6 están ejecutadas. El estado detallado y los acuerdos están en [`docs/seguimiento.md`](docs/seguimiento.md); lo que sigue pendiente (verificar las citas y compilar el paper) está en [`docs/guia-packet-tracer-y-pendientes.md`](docs/guia-packet-tracer-y-pendientes.md). La topología de red ya está construida y verificada a nivel lógico en Cisco Packet Tracer (ver «Diseño de red»).
 
 Resultados en prueba, con la partición principal **Caso C** (leave-one-attack-out, ambos sentidos), `W = 5 s`, `S = 1 s`:
 
@@ -32,7 +32,7 @@ El Random Forest **no supera** a la línea base: en AWID3 el ataque es una ráfa
 
 El desarrollo parte de cero sobre un equipo con **16 GB de RAM** y aproximadamente **500 GB de espacio disponible**. El procesamiento se hace por bloques y por captura; el proyecto no pretende ocupar todo el disco.
 
-Las versiones fijadas en `requirements.txt` se verificaron con **Python 3.13** (las pruebas pasan con 108 casos). Comprobar la versión del equipo:
+Las versiones fijadas en `requirements.txt` se verificaron con **Python 3.13** (las pruebas pasan con 115 casos). Comprobar la versión del equipo:
 
 ```bash
 python --version
@@ -118,12 +118,14 @@ evaluación final esté registrada (`final/evaluate.done`).
 ### Pruebas
 
 ```bash
-pytest -q          # 108 pruebas sobre datos sintéticos en formato interno; deben quedar en verde
+pytest -q          # 115 pruebas sobre datos sintéticos en formato interno; deben quedar en verde
 ```
 
 ## Diseño de red
 
 La topología se entrega como diseño de referencia, no como una simulación funcional de ataques 802.11. El diagrama editable está en [`docs/diagramas/arquitectura.mmd`](docs/diagramas/arquitectura.mmd); las instrucciones de visualización y exportación están en [`docs/diagramas/README.md`](docs/diagramas/README.md).
+
+La topología también se construyó y se verificó a nivel lógico en Cisco Packet Tracer 9.0.1 (VLAN 10, 20 y 30, router-on-a-stick, ACL y NAT; 10 pruebas de conectividad). El proyecto `.pkt`, la figura y los resultados están en [`docs/diagramas/`](docs/diagramas/): [`topologia-empresa.pkt`](docs/diagramas/topologia-empresa.pkt), [`topologia-empresa.png`](docs/diagramas/topologia-empresa.png) y [`pruebas-topologia.md`](docs/diagramas/pruebas-topologia.md). Packet Tracer no simula el enlace 802.11ac, el modo monitor ni WPA2/PMF; esas partes siguen siendo supuestos de diseño.
 
 ## Estructura
 

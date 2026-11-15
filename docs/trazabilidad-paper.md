@@ -51,6 +51,36 @@ Cada ejecución tiene su `run_<etapa>[_<conjunto>].json` con configuración, com
 
 ## Afirmaciones sin archivo propio (o dependientes del código)
 
-- Separación de clases por `n_disconn` en prueba (82 frente a 1): solo consta en `docs/resultados.md` §3 (cuantiles). No encontré un archivo en `results/` ni un script que lo regenere, así que no es verificable desde los archivos. Si el paper lo cita como resultado, conviene calcularlo desde el archivo de ventanas (`windows_file` de `metadata.json`) y guardarlo.
+- Separación por `n_disconn` en prueba (82 frente a 1): verificada el 2026-11-15 contra `data/processed/windows_caso_C_deauth_to_disas_W5_S1.parquet` (`split == test`): ventana normal con más desconexiones = 1, ventana de ataque con menos = 82. En disas→deauth: 3 y 48 (archivo `…disas_to_deauth…`). `data/processed/` no se versiona.
 - Desviación de R6 (dos ejecuciones `--final`): la primera se descartó y se borró; solo existe la nota del autor en `docs/decisiones.md` y `docs/reporte-gate-d.md` §5.
 - Tamaños de partición 503/66/600 (d→s): `configs/splits/*.json` y `docs/resultados.md`.
+
+## Discusión (paper, §Discusión y correcciones del 2026-11-15)
+
+Cifras calculadas el 2026-11-15, **después** de la evaluación final, con fines descriptivos; no modificaron ningún parámetro ni selección.
+
+| Afirmación | Valor | Archivo | Campo |
+|---|---|---|---|
+| Ventanas por conjunto d→s / s→d | train 503 / 465; val 66 / 105; test 600 / 599 | `data/processed/windows_caso_C_<sentido>_W5_S1.parquet` | `split`, `y` (train = 373+130 y 368+97; val = 31+35 y 31+74; test = 414+186 y 419+180) |
+| 100 % de ventanas de ataque de entrenamiento con ≥ 1 desconexión | 130/130 y 97/97 | ídem | `n_disconn >= 1` con `split == train`, `y == 1` |
+| Validación: 36 s antes y 35 s (d→s) o 74 s (s→d) después del inicio del ataque | `cap_a` 1608306566,2–1608306637,0; `cap_b` 1608310059,8–1608310170,0 | `configs/splits/caso_C_*.json` | `units.val` |
+| Umbrales de la línea base | 48 (d→s) y 122 (s→d); = menor conteo de ataque en la validación respectiva | `models/<exp_id>/metadata.json` y `windows_*.parquet` | `threshold`; mínimo de `n_disconn` con `split == val`, `y == 1` |
+| Umbrales del RF | 0,45 (d→s) y 0,93 (s→d) | `models/<exp_id>/metadata.json` | `threshold` |
+| Ventana fallida del RF d→s | la última ventana de ataque (+185 s), puntuación 0,44 < 0,45 | `eval_windows_test.parquet` | `y = 1`, `y_pred = 0` |
+| Ventana fallida del RF s→d | la primera ventana de ataque, puntuación 0,91 < 0,93 | ídem | ídem |
+| Ventana fallida de la línea base s→d | la primera ventana (48 < 122); la siguiente tiene 228; primera alerta +1,0 s | `eval_windows_test.parquet`, `windows_*.parquet` | ídem |
+| Línea base d→s sin ventanas fallidas | primera ventana con 122 ≥ 48 | ídem | ídem |
+| Horas de tráfico normal evaluadas | 0,1175 h (d→s) y 0,1178 h (s→d); 0 falsas alertas | `metrics_episode_test.json` | `normal_hours_evaluated`, `n_false_alerts` |
+| Límite superior de falsas alertas/h ≈ 25 | **cálculo propio**: Poisson con 0 eventos, 95 %: 2,996 / 0,1175 ≈ 25,5 y 2,996 / 0,1178 ≈ 25,4 | derivado de la fila anterior | — |
+| Tasa procesada / tasa de entrada ≈ 136 y 145 | 452 607 / 3 334 y 391 287 / 2 697 | `replay_test.json` (RF) | `captures[0]` |
+| Clientes en la mitigación | 10 compatibles, 0 no compatibles, 0 desconocidos en los 4 experimentos | `mitigation_log_test.jsonl` | `clientes` |
+| Puntuación de la línea base = conteo | `confianza` = 12 016 y 1 424, no una probabilidad; la prioridad «alta» siempre se cumple | `mitigation_log_test.jsonl` (línea base) | `confianza`, `prioridad` |
+
+## Canal sensor → servidor y figura del flujo (D2, D5)
+
+| Afirmación | Valor | Cómo se obtuvo |
+|---|---|---|
+| Mensaje de ejemplo de unos 310 bytes, ~2,5 kbit/s a un mensaje por segundo | 310 bytes (NDJSON, con salto de línea); 310 × 8 / 1000 = 2,48 kbit/s | Se construyó un mensaje con una ventana de **entrenamiento** de `data/processed/windows_caso_C_deauth_to_disas_W5_S1.parquet` y las 11 columnas de `feature_columns` de `models/<exp_id>/metadata.json`, y se midió su longitud. Solo mide el tamaño de un mensaje de ejemplo; **no mide el canal** (no está implementado). El script no se versiona. |
+| 11 características sin direcciones MAC | `n_frames_total, n_mgmt, n_data, ratio_data_mgmt, n_disconn, rate_disconn, delta_n_disconn, frac_protected_mgmt, rc_other, seq_jump_max, signal_std_disconn` | `feature_columns` de `metadata.json`; todas son conteos, tasas, fracciones o desviaciones |
+| Tasa de entrada de las capturas, 2 700 a 3 300 tramas/s | 2 697 y 3 334 | `replay_test.json` → `captures[0].input_rate_frames_per_second` |
+| Módulos de la figura del flujo (D2) | los de la tabla de módulos del paper | `tests/test_figura_pipeline.py` comprueba que cada módulo existe en `src/` o `scripts/` y que figura en la tabla del paper; la figura la genera `python -m scripts.figura_pipeline` |

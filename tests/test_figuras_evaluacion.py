@@ -148,6 +148,23 @@ def test_stale_figures_of_the_same_split_are_removed(tmp_path):
     assert second == {"timeline_cap_b_val.png"} and not (out / "figures" / "pr_val.png").exists()
 
 
+def test_failed_render_keeps_previous_figures(tmp_path, monkeypatch):
+    res = _make_results(tmp_path / "results")
+    out = tmp_path / "figs"
+    F.build_figures(res, "test", out)
+    before = {p.name: p.stat().st_size for p in (out / "figures").glob("*.png")}
+    assert before  # hay figuras buenas de una ejecucion anterior
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("fallo de renderizado")
+
+    monkeypatch.setattr(F, "save_figures", boom)
+    with pytest.raises(RuntimeError):
+        F.build_figures(res, "test", out)
+    after = {p.name: p.stat().st_size for p in (out / "figures").glob("*.png")}
+    assert after == before  # no se pierden las figuras previas
+
+
 def test_relativize_handles_captures_without_episodes():
     ev = pd.DataFrame({"capture_id": ["a", "a"], "t_end": [1000.0, 1010.0]})
     eps = pd.DataFrame(columns=["capture_id", "t_start", "t_end"], dtype=float)
