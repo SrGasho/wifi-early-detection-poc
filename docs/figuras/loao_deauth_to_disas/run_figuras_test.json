@@ -2,15 +2,15 @@
   "exp_id": "20261110-2232-loao_deauth_to_disas",
   "stage": "figuras",
   "split": "test",
-  "started_at": "2026-11-15T20:23:54+00:00",
-  "finished_at": "2026-11-15T20:23:55+00:00",
+  "started_at": "2026-11-15T20:26:34+00:00",
+  "finished_at": "2026-11-15T20:26:35+00:00",
   "seed": 42,
   "config_file": "configs/experiments/exp_loao_deauth_to_disas.yaml",
   "source_sha256": {
     "eval_windows_test.parquet": "3d34f8cbe82ece1989736f83f7d20117017e183b38b57916b4890df21dd4dcf0",
     "metrics_episode_test.json": "154a1db89aa7ae72d9736c31a3f2a8c0ff34054ee3724669c83d295012dbe099"
   },
-  "git_commit": "b6caa79d05499d6d9c9dbfe8820835d11c343e12",
+  "git_commit": "122eaf0e3d220330e81561c8a0f0b2dc5d42943c",
   "git_dirty": false,
   "python_version": "3.13.14",
   "platform": "Windows 11 AMD64",
