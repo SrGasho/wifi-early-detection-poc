@@ -60,6 +60,7 @@ latencia medible en test.
 | 15-nov | Omitidos por ahora: verificación de citas (I4) y compilación del paper (I5). Packet Tracer (D1) se hará en otra sesión. |
 | 15-nov | MCP de Packet Tracer (`packet-tracer-mcp` 0.12.0, ámbito local) instalado tras revisar su código; extensión `MCP-Control-Center.pts` agregada y corriendo. Plan en `docs/superpowers/plans/2026-11-15-packet-tracer-mcp.md`; T1–T8 aprobadas y ejecutadas el mismo día: topología construida y verificada (10 pruebas), `docs/diagramas/topologia-empresa.pkt`/`.png` y registro en `docs/diagramas/pruebas-topologia.md`; D1 y D3 cerrados en el paper. |
 | 15-nov | **D7:** la capacidad de 400/200 Mbps queda como supuesto de planificación (sin fuente). **I6:** el anteproyecto se deja como está y se ignora. D2, D5 y D6 siguen pendientes. |
+| 15-nov | **D2, D5, D6 cerrados.** D2: figura del flujo CRISP-DM generada por script con prueba. D5: canal sensor→servidor definido (JSON por ventana sobre TCP, ~310 bytes; diseño, no implementado). D6: configuración inalámbrica objetivo redactada (WPA2-Personal, PMF opcional; no verificable en Packet Tracer). |
 
 ## 5. Dudas abiertas
 

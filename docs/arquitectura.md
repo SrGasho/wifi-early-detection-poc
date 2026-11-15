@@ -54,6 +54,24 @@ La línea punteada representa solo la captura pasiva: los clientes no se asocian
 - PMF y la migración a IEEE 802.11ax son decisiones independientes.
 - Se asume que los clientes principales soportan 5 GHz; los de 2.4 GHz quedan fuera del perfil inicial.
 
+## Canal del sensor al servidor (decisión de diseño, no implementada)
+
+- El sensor calcula las características de cada ventana con `compute_window_features` y envía **un mensaje por ventana cerrada** (uno por paso `S = 1 s`), no las tramas.
+- Formato: un objeto JSON por línea, sobre una conexión TCP persistente que inicia el sensor hacia el servidor, con un puerto no privilegiado configurable (por ejemplo, el 5140).
+- Ambos equipos están en la VLAN 20: el tráfico no cruza el router ni sus ACL.
+- Contenido: versión del formato, identificador neutro del sensor, número de ventana, instante de cierre, `W`, `S` y las 11 características del perfil. Sin direcciones MAC, etiquetas ni tipo de ataque (R2, R11).
+- Tamaño de un mensaje de ejemplo, con una ventana real: unos 310 bytes, ~2,5 kbit/s a un mensaje por segundo (cifra en `docs/trazabilidad-paper.md`).
+- En un despliegue real: TLS con autenticación de ambos extremos, porque un mensaje falso podría provocar o suprimir alertas.
+- Límite: la lista de clientes de la mitigación simulada necesita las observaciones de (re)asociación, que este formato no incluye.
+
+## Configuración inalámbrica objetivo (supuesto de diseño, no verificado)
+
+- Dos SSID: corporativo (VLAN 10) e invitados (VLAN 30), ambos con WPA2-Personal, AES-CCMP, claves precompartidas distintas y WPS desactivado.
+- PMF (IEEE 802.11w) en modo opcional; gestión del punto de acceso en la VLAN 20.
+- Con PMF opcional, un cliente que no las negocia queda expuesto a tramas de desautenticación y disociación falsificadas; ese hueco es el que cubre el detector.
+- WPA3-Personal con PMF requerido es la evolución futura y elimina los clientes heredados.
+- Cisco Packet Tracer no permite configurar WPA2 ni PMF, así que no se verificó.
+
 ## Verificación a nivel lógico (Cisco Packet Tracer 9.0.1)
 
 La topología se construyó y se probó en Packet Tracer (`docs/diagramas/topologia-empresa.pkt`; resultados en `docs/diagramas/pruebas-topologia.md`). Se verificó con 10 pruebas de ping:

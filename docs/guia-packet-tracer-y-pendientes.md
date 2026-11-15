@@ -288,9 +288,10 @@ Esta tabla manda sobre el texto de cada pendiente más abajo, que se conserva co
 | # | Estado | Detalle |
 |---|---|---|
 | D1 | **Cerrado** | Topología construida y verificada con el MCP (10 pruebas); `docs/diagramas/topologia-empresa.pkt` y `.png`; registro en `docs/diagramas/pruebas-topologia.md`; figura incluida en el paper |
-| D2, D5 | Pendiente | Sin cambios |
+| D2 | **Cerrado** | Figura del flujo CRISP-DM con sus módulos (`scripts/figura_pipeline.py`, `docs/figuras/pipeline-crisp-dm.pdf`/`.png`), incluida en el paper |
+| D5 | **Cerrado** (diseño) | Canal sensor→servidor definido en el paper y en `arquitectura.md`: un JSON por ventana sobre TCP; ~310 bytes por mensaje. No implementado ni medido |
 | D7 | **Cerrado** como supuesto | Decisión del autor (15-nov): los 400 y 200 Mbps quedan declarados en el paper como supuestos de planificación, sin fuente ni medición, y ningún resultado depende de ellos |
-| D6 | Parcial | Verificado que Packet Tracer no permite WPA2 ni PMF (el AP queda abierto); el paper lo declara como supuesto de diseño. Falta, si se quiere, redactar la configuración objetivo en el diseño |
+| D6 | **Cerrado** (diseño) | Configuración inalámbrica objetivo redactada en el paper y en `arquitectura.md`; Packet Tracer no permite verificarla (el AP queda abierto) |
 | D3 | **Cerrado** | Tabla de VLAN e IP en el paper (`tab:vlan`) |
 | D4 | **Cerrado** | La VLAN 30 se implementa; el paper ya no dice «si se implementa» |
 | D8 | **Cerrado** | Criterios confirmados y declarados en el paper como de diseño; registrados en `seguimiento.md` (no en `decisiones.md`, congelado tras `gate-d`) |
