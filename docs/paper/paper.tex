@@ -87,7 +87,14 @@ Finalmente, Halbouni \textit{et al.} \cite{halbouni2023} revisan WPA3 y sus prob
 
 \section{Metodología}
 
-El componente analítico se organiza mediante CRISP-DM, mientras que el diseño de red sigue un flujo descendente de ingeniería: requisitos, arquitectura, conectividad, segmentación, seguridad, monitoreo e integración con el análisis. La evaluación se realizó sobre AWID3 en modo fuera de línea; los resultados se presentan en la sección de resultados.
+El componente analítico se organiza mediante CRISP-DM, mientras que el diseño de red sigue un flujo descendente de ingeniería: requisitos, arquitectura, conectividad, segmentación, seguridad, monitoreo e integración con el análisis. La evaluación se realizó sobre AWID3 en modo fuera de línea; los resultados se presentan en la sección de resultados. La Figura~\ref{fig:pipeline} resume las fases de CRISP-DM y los módulos de cada una.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{../figuras/pipeline-crisp-dm.pdf}
+\caption{Flujo de trabajo según CRISP-DM y módulos de cada fase. El módulo \texttt{experiment} registra cada ejecución y bloquea la repetición de la prueba final.}
+\label{fig:pipeline}
+\end{figure*}
 
 \subsection{Comprensión del contexto y objetivos}
 
@@ -241,9 +248,13 @@ La topología se construyó en Cisco Packet Tracer 9.0.1 y se verificó a nivel 
 
 El sensor capturará pasivamente el tráfico del aire en modo monitor y reenviará registros o características al servidor. Esta función no puede ser reemplazada por un servidor conectado detrás del router, porque las tramas de gestión no necesariamente atraviesan la red cableada.
 
+El sensor calcula las características de cada ventana con la misma función que el análisis en lote y envía al servidor un mensaje por cada ventana cerrada, es decir, uno por paso $S = 1$ s, en lugar de las tramas capturadas. Cada mensaje es un objeto JSON en una sola línea, enviado por una conexión TCP persistente que inicia el sensor hacia el servidor, con un puerto no privilegiado configurable (por ejemplo, el 5140). Los dos equipos están en la VLAN 20, así que el tráfico no atraviesa el router ni sus ACL. El mensaje contiene la versión del formato, un identificador neutro del sensor, el número de ventana, el instante de cierre, $W$, $S$ y las 11 características del perfil; ninguna de ellas contiene direcciones MAC, y el mensaje no lleva etiquetas ni tipo de ataque. Un mensaje de ejemplo construido con una ventana real ocupa unos 310 bytes, es decir, unos 2,5 kbit/s a un mensaje por segundo, frente a entre 2\,700 y 3\,300 tramas por segundo en las capturas. El servidor aplica el modelo y genera las alertas. En un despliegue real el canal debería ir cifrado y autenticado en ambos extremos (por ejemplo, TLS con certificados de cliente), porque un mensaje falso podría provocar o suprimir alertas. Este canal es una decisión de diseño: no está implementado ni medido, y en Packet Tracer la conexión entre el sensor y el servidor es solo lógica. Además, la lista de clientes de la mitigación simulada necesita las observaciones de (re)asociación, que este formato de mensaje no incluye.
+
 Como estimación de diseño, un AP 802.11ac 2x2 en 40 MHz puede ofrecer cerca de 400 Mbps de tasa física en condiciones favorables. Considerando una eficiencia útil aproximada del 50 \%, se utilizan 200 Mbps como capacidad agregada de referencia, equivalente a unos 20 Mbps por usuario con 10 usuarios activos. Estas cifras son supuestos de planificación: no se apoyan en una fuente bibliográfica ni en una medición física, y ningún resultado de este trabajo depende de ellas.
 
 La seguridad de referencia considera WPA2-Personal con PMF opcional o coexistencia de clientes heredados. La evolución futura considera WPA3-Personal con PMF requerido. PMF y la migración a IEEE 802.11ax se tratan como decisiones independientes.
+
+La configuración inalámbrica objetivo es la siguiente. El punto de acceso publicaría dos SSID: uno corporativo, asociado a la VLAN 10, y uno de invitados, asociado a la VLAN 30. Ambos usarían WPA2-Personal con cifrado AES-CCMP, claves precompartidas distintas y WPS desactivado. Las PMF (IEEE 802.11w) estarían en modo opcional: los clientes que las soportan las negocian y los heredados siguen pudiendo asociarse. La gestión del punto de acceso quedaría en la VLAN 20. Esta decisión es la que da sentido al detector: un cliente que no negocia PMF no está protegido frente a tramas de desautenticación y disociación falsificadas, y las PMF no protegen las tramas anteriores a que se establezcan las claves. Exigir PMF mediante WPA3-Personal eliminaría la compatibilidad con los clientes heredados. Cisco Packet Tracer no permite configurar WPA2 ni PMF en su punto de acceso ni en sus clientes inalámbricos, de modo que esta configuración es un supuesto de diseño que no se verificó en la topología.
 
 \section{Implementación de la prueba de concepto}
 

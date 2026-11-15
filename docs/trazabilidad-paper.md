@@ -75,3 +75,12 @@ Cifras calculadas el 2026-11-15, **después** de la evaluación final, con fines
 | Tasa procesada / tasa de entrada ≈ 136 y 145 | 452 607 / 3 334 y 391 287 / 2 697 | `replay_test.json` (RF) | `captures[0]` |
 | Clientes en la mitigación | 10 compatibles, 0 no compatibles, 0 desconocidos en los 4 experimentos | `mitigation_log_test.jsonl` | `clientes` |
 | Puntuación de la línea base = conteo | `confianza` = 12 016 y 1 424, no una probabilidad; la prioridad «alta» siempre se cumple | `mitigation_log_test.jsonl` (línea base) | `confianza`, `prioridad` |
+
+## Canal sensor → servidor y figura del flujo (D2, D5)
+
+| Afirmación | Valor | Cómo se obtuvo |
+|---|---|---|
+| Mensaje de ejemplo de unos 310 bytes, ~2,5 kbit/s a un mensaje por segundo | 310 bytes (NDJSON, con salto de línea); 310 × 8 / 1000 = 2,48 kbit/s | Se construyó un mensaje con una ventana de **entrenamiento** de `data/processed/windows_caso_C_deauth_to_disas_W5_S1.parquet` y las 11 columnas de `feature_columns` de `models/<exp_id>/metadata.json`, y se midió su longitud. Solo mide el tamaño de un mensaje de ejemplo; **no mide el canal** (no está implementado). El script no se versiona. |
+| 11 características sin direcciones MAC | `n_frames_total, n_mgmt, n_data, ratio_data_mgmt, n_disconn, rate_disconn, delta_n_disconn, frac_protected_mgmt, rc_other, seq_jump_max, signal_std_disconn` | `feature_columns` de `metadata.json`; todas son conteos, tasas, fracciones o desviaciones |
+| Tasa de entrada de las capturas, 2 700 a 3 300 tramas/s | 2 697 y 3 334 | `replay_test.json` → `captures[0].input_rate_frames_per_second` |
+| Módulos de la figura del flujo (D2) | los de la tabla de módulos del paper | `tests/test_figura_pipeline.py` comprueba que cada módulo existe en `src/` o `scripts/` y que figura en la tabla del paper; la figura la genera `python -m scripts.figura_pipeline` |
